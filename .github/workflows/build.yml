@@ -20,7 +20,7 @@ jobs:
         run: |
           echo $CERTIFICATE_P12 | base64 --decode > certificate.p12
           security create-keychain -p "" build.keychain
-          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -A
           security list-keychains -s build.keychain
           security set-keychain-settings build.keychain
           security unlock-keychain -p "" build.keychain
