@@ -13,18 +13,18 @@ jobs:
         with:
           submodules: recursive
           
-      - name: Import Certificate
-        env:
+       - name: Import Certificate
+         env:
            CERTIFICATE_P12: ${{ secrets.CERTIFICATE_P12 }}
            CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-        run: |
+         run: |
            echo $CERTIFICATE_P12 | base64 --decode > certificate.p12
-           openssl pkcs12 -in certificate.p12 -out certificate.pem -passin pass:$CERTIFICATE_PASSWORD -legacy
-           openssl pkcs12 -in certificate.pem -export -out certificate_new.p12 -passout pass:$CERTIFICATE_PASSWORD -legacy
+           openssl pkcs12 -in certificate.p12 -out cert.pem -passin pass:$CERTIFICATE_PASSWORD -passout pass:temp123
+           openssl pkcs12 -export -in cert.pem -out certificate_new.p12 -passout pass:temp123
            security create-keychain -p "temp" build.keychain
            security default-keychain -s build.keychain
            security unlock-keychain -p "temp" build.keychain
-           security import certificate_new.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+           security import certificate_new.p12 -k build.keychain -P "temp123" -T /usr/bin/codesign -T /usr/bin/security
            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "temp" build.keychain
 
       - name: Import Provisioning Profile
