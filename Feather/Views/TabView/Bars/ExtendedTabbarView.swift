@@ -5,7 +5,6 @@
 //  Created by samara on 5/17/24.
 //  Copyright (c) 2024 Samara M (khcrysalis)
 //
-
 import SwiftUI
 import NukeUI
 
@@ -14,8 +13,6 @@ struct ExtendedTabbarView: View {
 	@Environment(\.horizontalSizeClass) var horizontalSizeClass
 	@AppStorage("Feather.tabCustomization") var customization = TabViewCustomization()
 	@StateObject var viewModel = SourcesViewModel.shared
-	
-	@State private var _isAddingPresenting = false
 	
 	@FetchRequest(
 		entity: AltSource.entity(),
@@ -41,31 +38,15 @@ struct ExtendedTabbarView: View {
 				.hidden(horizontalSizeClass == .compact)
 			}
 			
-			TabSection("Sources") {
-				Tab(.localized("All Repositories"), systemImage: "globe.desk") {
-					NavigationStack {
-						SourceAppsView(object: Array(_sources), viewModel: viewModel)
-					}
-				}
-				
+			TabSection("Каталог") {
 				ForEach(_sources, id: \.identifier) { source in
 					Tab {
 						NavigationStack {
-							SourceAppsView(object: [source], viewModel: viewModel)
+							SourcesView()
 						}
 					} label: {
 						_icon(source.name ?? .localized("Unknown"), iconUrl: source.iconURL)
 					}
-					.swipeActions {
-						Button(.localized("Delete"), systemImage: "trash", role: .destructive) {
-							Storage.shared.deleteSource(for: source)
-						}
-					}
-				}
-			}
-			.sectionActions {
-				Button(.localized("Add Source"), systemImage: "plus") {
-					_isAddingPresenting = true
 				}
 			}
 			.defaultVisibility(.hidden, for: .tabBar)
@@ -73,10 +54,6 @@ struct ExtendedTabbarView: View {
 		}
 		.tabViewStyle(.sidebarAdaptable)
 		.tabViewCustomization($customization)
-		.sheet(isPresented: $_isAddingPresenting) {
-			SourcesAddView()
-				.presentationDetents([.medium])
-		}
 	}
 	
 	@ViewBuilder
@@ -98,10 +75,8 @@ struct ExtendedTabbarView: View {
 			}
 		}
 	}
-
 	
 	var standardIcon: some View {
 		Image(systemName: "app.dashed")
 	}
 }
-
