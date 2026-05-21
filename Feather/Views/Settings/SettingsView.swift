@@ -50,7 +50,7 @@ struct SettingsView: View {
 				
 				NBSection("Наш канал") {
 					Button {
-						UIApplication.open("https://t.me/ТУТ_ТВОЙ_КАНАЛ")
+						UIApplication.open("https://t.me/iphonmods")
 					} label: {
 						Label("Telegram канал", systemImage: "paperplane.fill")
 					}
