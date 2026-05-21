@@ -77,13 +77,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld App"
+                  "value" : "%lld Приложений"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld Apps"
+                  "value" : "%lld Приложений"
                 }
               }
             }
