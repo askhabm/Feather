@@ -61,7 +61,7 @@ struct LibraryView: View {
 	
 	// MARK: Body
 	var body: some View {
-		NBNavigationView(.localized("Library")) {
+		NBNavigationView(.localized("Библиотека")) {
 			NBListAdaptable {
 				if
 					!_filteredSignedApps.isEmpty,
