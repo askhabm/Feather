@@ -47,9 +47,9 @@ struct CertificatesView: View {
 			if _certificates.isEmpty {
 				if #available(iOS 17, *) {
 					ContentUnavailableView {
-						Label(.localized("No Certificates"), systemImage: "questionmark.folder.fill")
+						Label(.localized("Нет сертификатов"), systemImage: "questionmark.folder.fill")
 					} description: {
-						Text(.localized("Get started signing by importing your first certificate."))
+						Text(.localized("Начните подписывать, добавив свой первый сертификат."))
 					} actions: {
 						Button {
 							_isAddingPresenting = true
