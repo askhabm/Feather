@@ -29,11 +29,11 @@ struct CertificatesAddView: View {
 	var body: some View {
 		NBNavigationView(.localized("New Certificate"), displayMode: .inline) {
 			Form {
-				NBSection(.localized("Files")) {
-					_importButton(.localized("Import Certificate File"), file: _p12URL) {
+				NBSection(.localized("Файлы")) {
+					_importButton(.localized("Импорт .p12 файла."), file: _p12URL) {
 						_isImportingP12Presenting = true
 					}
-					_importButton(.localized("Import Provisioning File"), file: _provisionURL) {
+					_importButton(.localized("Импорт .mobileprovision файла."), file: _provisionURL) {
 						_isImportingMobileProvisionPresenting = true
 					}
 				}
@@ -44,7 +44,7 @@ struct CertificatesAddView: View {
 				}
 				
 				Section {
-					TextField(.localized("Nickname (Optional)"), text: $_certificateName)
+					TextField(.localized("Никнейм (Необязательно)"), text: $_certificateName)
 				}
 			}
 			.toolbar {
