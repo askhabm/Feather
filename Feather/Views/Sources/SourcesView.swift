@@ -14,8 +14,6 @@ import NimbleViews
 struct SourcesView: View {
 	@Environment(\.horizontalSizeClass) private var horizontalSizeClass
 	@StateObject var viewModel = SourcesViewModel.shared
-	@State private var _isAddingPresenting = false
-	@State private var _addingSourceLoading = false
 	@State private var _searchText = ""
 	
 	private var _filteredSources: [AltSource] {
@@ -28,13 +26,12 @@ struct SourcesView: View {
 		animation: .snappy
 	) private var _sources: FetchedResults<AltSource>
 	
-	// MARK: Body
 	var body: some View {
-		NBNavigationView(.localized("Sources")) {
+		NBNavigationView("Каталог") {
 			NBListAdaptable {
 				if !_filteredSources.isEmpty {
 					NBSection(
-						.localized("Repositories"),
+						"Репозитории",
 						secondary: _filteredSources.count.description
 					) {
 						ForEach(_filteredSources) { source in
@@ -53,34 +50,15 @@ struct SourcesView: View {
 				if _filteredSources.isEmpty {
 					if #available(iOS 17, *) {
 						ContentUnavailableView {
-							Label(.localized("No Repositories"), systemImage: "globe.desk.fill")
+							Label("Нет репозиториев", systemImage: "globe.desk.fill")
 						} description: {
-							Text(.localized("Get started by adding your first repository."))
-						} actions: {
-							Button {
-								_isAddingPresenting = true
-							} label: {
-								NBButton(.localized("Add Source"), style: .text)
-							}
+							Text("Репозиторий загружается...")
 						}
 					}
 				}
 			}
-			.toolbar {
-				NBToolbarButton(
-					systemImage: "plus",
-					style: .icon,
-					placement: .topBarTrailing,
-					isDisabled: _addingSourceLoading
-				) {
-					_isAddingPresenting = true
-				}
-			}
 			.refreshable {
 				await viewModel.fetchSources(_sources, refresh: true)
-			}
-			.sheet(isPresented: $_isAddingPresenting) {
-				SourcesAddView()
 			}
 		}
 		.task(id: Array(_sources)) {
