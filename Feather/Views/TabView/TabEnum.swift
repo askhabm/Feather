@@ -16,18 +16,18 @@ enum TabEnum: String, CaseIterable, Hashable {
 	
 	var title: String {
 		switch self {
-		case .sources:     	return .localized("Sources")
-		case .library: 		return .localized("Library")
-		case .settings: 	return .localized("Settings")
-		case .certificates:	return .localized("Certificates")
+		case .sources:      return "Каталог"
+		case .library:      return "Библиотека"
+		case .settings:     return "Сертификат"
+		case .certificates: return .localized("Certificates")
 		}
 	}
 	
 	var icon: String {
 		switch self {
-		case .sources: 		return "globe.desk"
-		case .library: 		return "square.grid.2x2"
-		case .settings: 	return "gearshape.2"
+		case .sources:      return "globe.desk"
+		case .library:      return "square.grid.2x2"
+		case .settings:     return "gearshape.2"
 		case .certificates: return "person.text.rectangle"
 		}
 	}
