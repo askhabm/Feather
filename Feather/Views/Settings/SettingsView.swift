@@ -8,14 +8,11 @@
 import SwiftUI
 import NimbleViews
 import UIKit
-import Darwin
-import IDeviceSwift
 
 // MARK: - View
 struct SettingsView: View {
 	@AppStorage("feather.selectedCert") private var _storedSelectedCert: Int = 0
 	
-	// MARK: Fetch
 	@FetchRequest(
 		entity: CertificatePair.entity(),
 		sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)],
@@ -34,9 +31,9 @@ struct SettingsView: View {
 
 	// MARK: Body
 	var body: some View {
-		NBNavigationView(.localized("Settings")) {
+		NBNavigationView("Сертификат") {
 			Form {
-				NBSection(.localized("Certificates")) {
+				NBSection("Сертификат") {
 					if let cert = selectedCertificate {
 						CertificatesCellView(cert: cert)
 					} else {
@@ -45,10 +42,18 @@ struct SettingsView: View {
 							.foregroundColor(.disabled())
 					}
 					NavigationLink(destination: CertificatesView()) {
-						Label(.localized("Certificates"), systemImage: "checkmark.seal")
+						Label("Добавить сертификат", systemImage: "checkmark.seal")
 					}
 				} footer: {
-					Text(.localized("Add and manage certificates used for signing applications."))
+					Text("Добавьте сертификат для подписи приложений.")
+				}
+				
+				NBSection("Наш канал") {
+					Button {
+						UIApplication.open("https://t.me/ТУТ_ТВОЙ_КАНАЛ")
+					} label: {
+						Label("Telegram канал", systemImage: "paperplane.fill")
+					}
 				}
 			}
 		}
