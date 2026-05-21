@@ -100,7 +100,7 @@ struct SourceAppsDetailView: View {
 				}
 				
 				if let appDesc = app.localizedDescription {
-					NBSection(.localized("Description")) {
+					NBSection(.localized("Описание")) {
 						VStack(alignment: .leading, spacing: 2) {
 							ExpandableText(text: appDesc, lineLimit: 3)
 						}
@@ -110,34 +110,34 @@ struct SourceAppsDetailView: View {
 					Divider()
 				}
                 
-				NBSection(.localized("Information")) {
+				NBSection(.localized("Информация")) {
 					VStack(spacing: 12) {
 						if let sourceName = source.name {
-							_infoRow(title: .localized("Source"), value: sourceName)
+							_infoRow(title: .localized("Источник"), value: sourceName)
 						}
                         
 						if let developer = app.developer {
-							_infoRow(title: .localized("Developer"), value: developer)
+							_infoRow(title: .localized("Разработчик"), value: developer)
 						}
 						
 						if let size = app.size {
-							_infoRow(title: .localized("Size"), value: size.formattedByteCount)
+							_infoRow(title: .localized("Размер"), value: size.formattedByteCount)
 						}
 						
 						if let category = app.category {
-							_infoRow(title: .localized("Category"), value: category.capitalized)
+							_infoRow(title: .localized("Категория"), value: category.capitalized)
 						}
 						
 						if let version = app.currentVersion {
-							_infoRow(title: .localized("Version"), value: version)
+							_infoRow(title: .localized("Версия"), value: version)
 						}
 						
 						if let date = app.currentDate?.date {
-							_infoRow(title: .localized("Updated"), value: DateFormatter.localizedString(from: date, dateStyle: .medium, timeStyle: .none))
+							_infoRow(title: .localized("Обновлено"), value: DateFormatter.localizedString(from: date, dateStyle: .medium, timeStyle: .none))
 						}
 						
 						if let bundleId = app.id {
-							_infoRow(title: .localized("Identifier"), value: bundleId)
+							_infoRow(title: .localized("Идентификатор"), value: bundleId)
 						}
 					}
 				}
