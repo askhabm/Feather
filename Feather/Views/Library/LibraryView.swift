@@ -214,10 +214,10 @@ struct LibraryView: View {
 extension LibraryView {
 	@ViewBuilder
 	private func _importActions() -> some View {
-		Button(.localized("Import from Files"), systemImage: "folder") {
+		Button(.localized("Импорт из Файлы"), systemImage: "folder") {
 			_isImportingPresenting = true
 		}
-		Button(.localized("Import from URL"), systemImage: "globe") {
+		Button(.localized("Import from URL "), systemImage: "globe") {
 			_isDownloadingPresenting = true
 		}
 	}
