@@ -44,7 +44,7 @@ struct DownloadButtonView: View {
 						_ = downloadManager.startDownload(from: url, id: app.currentUniqueId)
 					}
 				} label: {
-					Text(.localized("Get"))
+					Text(.localized("Скачать"))
 						.lineLimit(0)
 						.font(.headline.bold())
 						.foregroundStyle(Color.accentColor)
