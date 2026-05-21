@@ -215,7 +215,7 @@ extension LibraryView {
 	@ViewBuilder
 	private func _importActions() -> some View {
 		Button(.localized("Импорт из Файлы"), systemImage: "folder") {
-			_isImportingPresenting = 
+			_isImportingPresenting = true
 	}
 }
 
