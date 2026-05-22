@@ -68,7 +68,7 @@ struct LibraryView: View {
 					_selectedScope == .all || _selectedScope == .signed
 				{
 					NBSection(
-						.localized("Signed"),
+						.localized("Подписанные"),
 						secondary: _filteredSignedApps.count.description
 					) {
 						ForEach(_filteredSignedApps, id: \.uuid) { app in
@@ -89,7 +89,7 @@ struct LibraryView: View {
 					_selectedScope == .all || _selectedScope == .imported
 				{
 					NBSection(
-						.localized("Imported"),
+						.localized("Импортированные"),
 						secondary: _filteredImportedApps.count.description
 					) {
 						ForEach(_filteredImportedApps, id: \.uuid) { app in
