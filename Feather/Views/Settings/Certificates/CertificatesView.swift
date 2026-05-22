@@ -78,8 +78,8 @@ struct CertificatesView: View {
 			CertificatesAddView()
 				.presentationDetents([.medium])
 		}
-		.alert(.localized("Change Nickname"), isPresented: $_isRenamingPresenting, presenting: _certToRename) { cert in
-			TextField(.localized("Nickname"), text: $_newNickname)
+		.alert(.localized("Изменить никнейм"), isPresented: $_isRenamingPresenting, presenting: _certToRename) { cert in
+			TextField(.localized("Никнейм"), text: $_newNickname)
 			Button(.localized("Cancel"), role: .cancel) { }
 			Button(.localized("OK")) {
 				cert.nickname = _newNickname.isEmpty ? nil : _newNickname
@@ -142,10 +142,10 @@ extension CertificatesView {
 	
 	@ViewBuilder
 	private func _contextActions(for cert: CertificatePair) -> some View {
-		Button(.localized("Get Info"), systemImage: "info.circle") {
+		Button(.localized("Получить информацию"), systemImage: "info.circle") {
 			_isSelectedInfoPresenting = cert
 		}
-		Button(.localized("Change Nickname"), systemImage: "pencil") {
+		Button(.localized("Изменить никнейм"), systemImage: "pencil") {
 			_newNickname = cert.nickname ?? ""
 			_certToRename = cert
 			_isRenamingPresenting = true
