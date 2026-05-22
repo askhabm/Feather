@@ -151,11 +151,11 @@ struct SigningView: View {
 extension SigningView {
 	@ViewBuilder
 	private func _customizationOptions(for app: AppInfoPresentable) -> some View {
-		NBSection(.localized("Customization")) {
+		NBSection(.localized("Кастомизация")) {
 			Menu {
-				Button(.localized("Select Alternative Icon"), systemImage: "app.dashed") { _isAltPickerPresenting = true }
-				Button(.localized("Choose from Files"), systemImage: "folder") { _isFilePickerPresenting = true }
-				Button(.localized("Choose from Photos"), systemImage: "photo") { _isImagePickerPresenting = true }
+				Button(.localized("Выберите альтернативную иконку"), systemImage: "app.dashed") { _isAltPickerPresenting = true }
+				Button(.localized("Выбрать из Файлы"), systemImage: "folder") { _isFilePickerPresenting = true }
+				Button(.localized("Выбрать из Фото"), systemImage: "photo") { _isImagePickerPresenting = true }
 			} label: {
 				if let icon = appIcon {
 					Image(uiImage: icon)
@@ -165,9 +165,9 @@ extension SigningView {
 				}
 			}
 			
-			_infoCell(.localized("Name"), desc: _temporaryOptions.appName ?? app.name) {
+			_infoCell(.localized("Имя"), desc: _temporaryOptions.appName ?? app.name) {
 				SigningPropertiesView(
-					title: .localized("Name"),
+					title: .localized("Имя"),
 					initialValue: _temporaryOptions.appName ?? (app.name ?? ""),
 					bindingValue: $_temporaryOptions.appName
 				)
@@ -179,9 +179,9 @@ extension SigningView {
 					bindingValue: $_temporaryOptions.appIdentifier
 				)
 			}
-			_infoCell(.localized("Version"), desc: _temporaryOptions.appVersion ?? app.version) {
+			_infoCell(.localized("Версия"), desc: _temporaryOptions.appVersion ?? app.version) {
 				SigningPropertiesView(
-					title: .localized("Version"),
+					title: .localized("Версия"),
 					initialValue: _temporaryOptions.appVersion ?? (app.version ?? ""),
 					bindingValue: $_temporaryOptions.appVersion
 				)
@@ -191,7 +191,7 @@ extension SigningView {
 	
 	@ViewBuilder
 	private func _cert() -> some View {
-		NBSection(.localized("Signing")) {
+		NBSection(.localized("Подписать")) {
 			if let cert = _selectedCert() {
 				NavigationLink {
 					CertificatesView(selectedCert: $_temporaryCertificate)
@@ -201,7 +201,7 @@ extension SigningView {
 					)
 				}
 			} else {
-				Text(.localized("No Certificate"))
+				Text(.localized("Нет сертификата"))
 					.font(.footnote)
 					.foregroundColor(.disabled())
 			}
@@ -210,8 +210,8 @@ extension SigningView {
 	
 	@ViewBuilder
 	private func _customizationProperties(for app: AppInfoPresentable) -> some View {
-		NBSection(.localized("Advanced")) {
-			DisclosureGroup(.localized("Modify")) {
+		NBSection(.localized("Расширенные настройки")) {
+			DisclosureGroup(.localized("Модифицировать")) {
 				NavigationLink(.localized("Existing Dylibs")) {
 					SigningDylibView(
 						app: app,
@@ -239,12 +239,12 @@ extension SigningView {
 				}
 			}
 			
-			NavigationLink(.localized("Properties")) {
+			NavigationLink(.localized("Параметры")) {
 				Form { SigningOptionsView(
 					options: $_temporaryOptions,
 					temporaryOptions: _optionsManager.options
 				)}
-				.navigationTitle(.localized("Properties"))
+				.navigationTitle(.localized("Параметры"))
 			}
 		}
 	}
@@ -268,8 +268,8 @@ extension SigningView {
 			_selectedCert() != nil || _temporaryOptions.signingOption != .default
 		else {
 			UIAlertController.showAlertWithOk(
-				title: .localized("No Certificate"),
-				message: .localized("Please go to settings and import a valid certificate"),
+				title: .localized("Нет сертификата"),
+				message: .localized("Пожалуйста, перейдите в настройки и импортируйте действующий сертификат."),
 				isCancel: true
 			)
 			return
