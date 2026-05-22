@@ -67,7 +67,7 @@ struct SigningView: View {
 							Button {
 								_start()
 							} label: {
-								NBSheetButton(title: .localized("Start Signing"), style: .prominent)
+								NBSheetButton(title: .localized("Подписать"), style: .prominent)
 									.padding()
 							}
 							.buttonStyle(.plain)
