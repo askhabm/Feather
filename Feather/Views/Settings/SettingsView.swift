@@ -31,7 +31,7 @@ struct SettingsView: View {
 
 	// MARK: Body
 	var body: some View {
-		NBNavigationView("Сертификат") {
+		NBNavigationView("Настройки") {
 			Form {
 				NBSection("Сертификат") {
 					if let cert = selectedCertificate {
@@ -48,11 +48,11 @@ struct SettingsView: View {
 					Text("Добавьте сертификат для подписи приложений.")
 				}
 				
-				NBSection("Наш канал") {
+				NBSection("Наш Telegram") {
 					Button {
 						UIApplication.open("https://t.me/iphonmods")
 					} label: {
-						Label("Telegram канал", systemImage: "paperplane.fill")
+						Label("iphonmods by askhabm", systemImage: "paperplane.fill")
 					}
 				}
 			}
