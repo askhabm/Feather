@@ -122,7 +122,7 @@ extension LibraryCellView {
 	
 	@ViewBuilder
 	private func _contextActions(for app: AppInfoPresentable) -> some View {
-		Button(.localized("Get Info"), systemImage: "info.circle") {
+		Button(.localized("Информация"), systemImage: "info.circle") {
 			selectedInfoAppPresenting = AnyApp(base: app)
 		}
 	}
@@ -131,24 +131,24 @@ extension LibraryCellView {
 	private func _contextActionsExtra(for app: AppInfoPresentable) -> some View {
 		if app.isSigned {
 			if let id = app.identifier {
-				Button(.localized("Open"), systemImage: "app.badge.checkmark") {
+				Button(.localized("Открыть"), systemImage: "app.badge.checkmark") {
 					UIApplication.openApp(with: id)
 				}
 			}
-			Button(.localized("Install"), systemImage: "square.and.arrow.down") {
+			Button(.localized("Установить"), systemImage: "square.and.arrow.down") {
 				selectedInstallAppPresenting = AnyApp(base: app)
 			}
 			Button(.localized("Re-sign"), systemImage: "signature") {
 				selectedSigningAppPresenting = AnyApp(base: app)
 			}
-			Button(.localized("Export"), systemImage: "square.and.arrow.up") {
+			Button(.localized("Экспортировать"), systemImage: "square.and.arrow.up") {
 				selectedInstallAppPresenting = AnyApp(base: app, archive: true)
 			}
 		} else {
-			Button(.localized("Install"), systemImage: "square.and.arrow.down") {
+			Button(.localized("Установить"), systemImage: "square.and.arrow.down") {
 				selectedInstallAppPresenting = AnyApp(base: app)
 			}
-			Button(.localized("Sign"), systemImage: "signature") {
+			Button(.localized("Подписать"), systemImage: "signature") {
 				selectedSigningAppPresenting = AnyApp(base: app)
 			}
 		}
@@ -162,7 +162,7 @@ extension LibraryCellView {
 					selectedInstallAppPresenting = AnyApp(base: app)
 				} label: {
 					FRExpirationPillView(
-						title: .localized("Install"),
+						title: .localized("Установить"),
 						revoked: certRevoked,
 						expiration: certInfo
 					)
@@ -172,7 +172,7 @@ extension LibraryCellView {
 					selectedSigningAppPresenting = AnyApp(base: app)
 				} label: {
 					FRExpirationPillView(
-						title: .localized("Sign"),
+						title: .localized("Подписать"),
 						revoked: false,
 						expiration: nil
 					)
