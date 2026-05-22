@@ -264,9 +264,9 @@ extension LibraryView {
 		
 		var displayName: String {
 			switch self {
-			case .all: return .localized("All")
-			case .signed: return .localized("Signed")
-			case .imported: return .localized("Imported")
+			case .all: return .localized("Все")
+			case .signed: return .localized("Подписан")
+			case .imported: return .localized("Импортированный")
 			}
 		}
 	}
