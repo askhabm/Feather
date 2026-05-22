@@ -138,7 +138,7 @@ extension LibraryCellView {
 			Button(.localized("Установить"), systemImage: "square.and.arrow.down") {
 				selectedInstallAppPresenting = AnyApp(base: app)
 			}
-			Button(.localized("Re-sign"), systemImage: "signature") {
+			Button(.localized("Переподписать"), systemImage: "signature") {
 				selectedSigningAppPresenting = AnyApp(base: app)
 			}
 			Button(.localized("Экспортировать"), systemImage: "square.and.arrow.up") {
