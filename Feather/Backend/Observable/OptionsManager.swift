@@ -137,7 +137,7 @@ struct Options: Codable, Equatable {
 		injectionFiles: [],
 		disInjectionFiles: [],
 		removeFiles: [],
-		fileSharing: false,
+		fileSharing: true,
 		itunesFileSharing: false,
 		proMotion: false,
 		gameMode: false,
@@ -154,8 +154,8 @@ struct Options: Codable, Equatable {
 		
 		// MARK: Post Modifications
 		
-		post_installAppAfterSigned: false,
-		post_deleteAppAfterSigned: false
+		post_installAppAfterSigned: true,
+		post_deleteAppAfterSigned: true
 	)
 	
 	// MARK: duplicate values are not recommended!
