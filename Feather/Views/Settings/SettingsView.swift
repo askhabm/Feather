@@ -37,7 +37,7 @@ struct SettingsView: View {
 					if let cert = selectedCertificate {
 						CertificatesCellView(cert: cert)
 					} else {
-						Text(.localized("No Certificate"))
+						Text(.localized("Нет сертификата"))
 							.font(.footnote)
 							.foregroundColor(.disabled())
 					}
