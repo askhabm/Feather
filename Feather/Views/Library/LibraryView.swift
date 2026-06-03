@@ -184,7 +184,7 @@ struct LibraryView: View {
 				)
 				.ignoresSafeArea()
 			}
-			.alert(.localized("Import from URL"), isPresented: $_isDownloadingPresenting) {
+			.alert(.localized("Импорт из URL"), isPresented: $_isDownloadingPresenting) {
 				TextField(.localized("URL"), text: $_alertDownloadString)
 					.textInputAutocapitalization(.never)
 				Button(.localized("Cancel"), role: .cancel) {
@@ -217,7 +217,7 @@ extension LibraryView {
 		Button(.localized("Импорт из Файлы"), systemImage: "folder") {
 			_isImportingPresenting = true
 		}
-		Button(.localized("Import from URL "), systemImage: "globe") {
+		Button(.localized("Импорт из URL "), systemImage: "globe") {
 			_isDownloadingPresenting = true
 		}
 	}
