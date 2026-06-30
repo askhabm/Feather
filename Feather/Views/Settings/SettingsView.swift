@@ -47,14 +47,6 @@ struct SettingsView: View {
 				} footer: {
 					Text("Добавьте сертификат для подписи приложений.")
 				}
-				
-				NBSection("Наш Telegram") {
-					Button {
-						UIApplication.open("https://t.me/iphonmods")
-					} label: {
-						Label("iphonmods by askhabm", systemImage: "paperplane.fill")
-					}
-				}
 			}
 		}
 	}
