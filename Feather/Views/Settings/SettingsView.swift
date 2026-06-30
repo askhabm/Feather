@@ -47,6 +47,13 @@ struct SettingsView: View {
 				} footer: {
 					Text("Добавьте сертификат для подписи приложений.")
 				}
+				NBSection("Разработчик") {
+					Button {
+						UIApplication.open("https://t.me/iphonmods")
+					} label: {
+						Label("exxcofluxxiano", systemImage: "paperplane.fill")
+					}
+				}
 			}
 		}
 	}
