@@ -15,6 +15,7 @@ struct SourcesView: View {
 	@StateObject var viewModel = SourcesViewModel.shared
 	@State private var _selectedRoute: SourceAppsView.SourceAppRoute?
 	@State private var _searchText = ""
+	@State private var _isAddingPresenting = false
 	@AppStorage("Feather.sortOptionRawValue") private var _sortOptionRawValue: String = SourceAppsView.SortOption.default.rawValue
 	@AppStorage("Feather.sortAscending") private var _sortAscending: Bool = true
 	@State private var _sortOption: SourceAppsView.SortOption = .default
@@ -54,6 +55,13 @@ struct SourcesView: View {
 			}
 			.searchable(text: $_searchText, placement: .platform())
 			.toolbar {
+				NBToolbarButton(
+					systemImage: "plus",
+					style: .icon,
+					placement: .topBarTrailing
+				) {
+					_isAddingPresenting = true
+				}
 				NBToolbarMenu(
 					systemImage: "line.3.horizontal.decrease",
 					style: .icon,
@@ -85,6 +93,9 @@ struct SourcesView: View {
 			}
 			.refreshable {
 				await viewModel.fetchSources(_sources, refresh: true)
+			}
+			.sheet(isPresented: $_isAddingPresenting) {
+				SourcesAddView()
 			}
 		}
 		.task(id: Array(_sources)) {
