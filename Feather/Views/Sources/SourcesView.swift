@@ -29,7 +29,7 @@ struct SourcesView: View {
 				.searchable(text: $_searchText, placement: .platform())
 				.toolbar { toolbarContent }
 				.navigationDestinationIfAvailable(item: $_selectedRoute) { route in
-					SourceAppsDetailView(source: route.source, app: route.app)
+					SourceAppsDetailView(sourceURL: route.sourceURL, source: route.source, app: route.app)
 				}
 				.refreshable {
 					await viewModel.fetchSources(_sources, refresh: true)
@@ -59,7 +59,7 @@ struct SourcesView: View {
 		if loadedSources.isEmpty {
 			emptyState
 		} else {
-			appsListView(loadedSources)
+			appsListView()
 		}
 	}
 
@@ -75,9 +75,14 @@ struct SourcesView: View {
 	}
 
 	@ViewBuilder
-	private func appsListView(_ loadedSources: [ASRepository]) -> some View {
+	private func appsListView() -> some View {
+		let contexts = Array(_sources).compactMap { source -> SourceAppsView.SourceRepositoryContext? in
+			guard let repo = viewModel.sources[source] else { return nil }
+			return SourceAppsView.SourceRepositoryContext(sourceURL: source.sourceURL, repository: repo)
+		}
+		
 		SourceAppsTableRepresentableView(
-			sources: loadedSources,
+			sourceContexts: contexts,
 			searchText: $_searchText,
 			sortOption: $_sortOption,
 			sortAscending: $_sortAscending,
