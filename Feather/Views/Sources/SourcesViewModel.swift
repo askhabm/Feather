@@ -18,9 +18,10 @@ final class SourcesViewModel: ObservableObject {
 	
 	private let _dataService = NBFetchService()
 	
-	var isFinished = true
+	@Published var isFinished = true
 	@Published var sources: [AltSource: ASRepository] = [:]
 	
+	@MainActor
 	func fetchSources(_ sources: FetchedResults<AltSource>, refresh: Bool = false, batchSize: Int = 4) async {
 		guard isFinished else { return }
 		
@@ -32,9 +33,7 @@ final class SourcesViewModel: ObservableObject {
 		isFinished = false
 		defer { isFinished = true }
 		
-		await MainActor.run {
-			self.sources = [:]
-		}
+		self.sources = [:]
 		
 		let sourcesArray = Array(sources)
 		
@@ -44,7 +43,8 @@ final class SourcesViewModel: ObservableObject {
 			
 			let batchResults = await withTaskGroup(of: (AltSource, ASRepository?).self, returning: [AltSource: ASRepository].self) { group in
 				for source in batch {
-					group.addTask {
+					group.addTask { [weak self] in
+						guard let self = self else { return (source, nil) }
 						guard let url = source.sourceURL else {
 							return (source, nil)
 						}
@@ -71,10 +71,8 @@ final class SourcesViewModel: ObservableObject {
 				return results
 			}
 			
-			await MainActor.run {
-				for (source, repo) in batchResults {
-					self.sources[source] = repo
-				}
+			for (source, repo) in batchResults {
+				self.sources[source] = repo
 			}
 		}
 	}
