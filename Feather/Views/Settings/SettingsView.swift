@@ -47,11 +47,11 @@ struct SettingsView: View {
 				} footer: {
 					Text("Добавьте сертификат для подписи приложений.")
 				}
-				NBSection("Разработчик") {
+				NBSection("Наш Telegram") {
 					Button {
-						UIApplication.open("https://t.me/exxcofluxxiano")
+						UIApplication.open("https://t.me/iphonmods")
 					} label: {
-						Label("exxcofluxxiano", systemImage: "paperplane.fill")
+						Label("iphonmods by makuzaewv", systemImage: "paperplane.fill")
 					}
 				}
 			}
