@@ -1,58 +1,133 @@
 //
-//  SettingsView.swift
+//  SourcesView.swift
 //  Feather
 //
-//  Created by samara on 10.04.2025.
-//
 
+import CoreData
+import AltSourceKit
 import SwiftUI
 import NimbleViews
-import UIKit
 
 // MARK: - View
-struct SettingsView: View {
-	@AppStorage("feather.selectedCert") private var _storedSelectedCert: Int = 0
-	
+struct SourcesView: View {
+	@StateObject var viewModel = SourcesViewModel.shared
+	@State private var _selectedRoute: SourceAppsView.SourceAppRoute?
+	@State private var _searchText = ""
+	@AppStorage("Feather.sortOptionRawValue") private var _sortOptionRawValue: String = SourceAppsView.SortOption.default.rawValue
+	@AppStorage("Feather.sortAscending") private var _sortAscending: Bool = true
+	@State private var _sortOption: SourceAppsView.SortOption = .default
+
 	@FetchRequest(
-		entity: CertificatePair.entity(),
-		sortDescriptors: [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)],
+		entity: AltSource.entity(),
+		sortDescriptors: [NSSortDescriptor(keyPath: \AltSource.name, ascending: true)],
 		animation: .snappy
-	) private var _certificates: FetchedResults<CertificatePair>
-	
-	private var selectedCertificate: CertificatePair? {
-		guard
-			_storedSelectedCert >= 0,
-			_storedSelectedCert < _certificates.count
-		else {
-			return nil
+	) private var _sources: FetchedResults<AltSource>
+
+	var body: some View {
+		NBNavigationView("Каталог") {
+			mainContent
+				.searchable(text: $_searchText, placement: .platform())
+				.toolbar { toolbarContent }
+				.navigationDestinationIfAvailable(item: $_selectedRoute) { route in
+					SourceAppsDetailView(sourceURL: route.sourceURL, source: route.source, app: route.app)
+				}
+				.refreshable {
+					await viewModel.fetchSources(_sources, refresh: true)
+				}
 		}
-		return _certificates[_storedSelectedCert]
+		.task(id: Array(_sources)) {
+			await viewModel.fetchSources(_sources)
+		}
+		.onChange(of: _sortOption) { newValue in
+			_sortOptionRawValue = newValue.rawValue
+		}
 	}
 
-	// MARK: Body
-	var body: some View {
-		NBNavigationView("Настройки") {
-			Form {
-				NBSection("Сертификат") {
-					if let cert = selectedCertificate {
-						CertificatesCellView(cert: cert)
-					} else {
-						Text(.localized("Нет сертификата"))
-							.font(.footnote)
-							.foregroundColor(.disabled())
-					}
-					NavigationLink(destination: CertificatesView()) {
-						Label("Добавить сертификат", systemImage: "checkmark.seal")
-					}
-				} footer: {
-					Text("Добавьте сертификат для подписи приложений.")
-				}
-				NBSection("Наш Telegram") {
-					Button {
-						UIApplication.open("https://t.me/iphonmods")
-					} label: {
-						Label("iphonmods by makuzaewv", systemImage: "paperplane.fill")
-					}
+	// MARK: - Subviews
+	@ViewBuilder
+	private var mainContent: some View {
+		if !viewModel.isFinished {
+			ProgressView()
+		} else {
+			contentView
+		}
+	}
+
+	@ViewBuilder
+	private var contentView: some View {
+		let loadedSources = Array(_sources).compactMap { viewModel.sources[$0] }
+		if loadedSources.isEmpty {
+			emptyState
+		} else {
+			appsListView()
+		}
+	}
+
+	@ViewBuilder
+	private var emptyState: some View {
+		if #available(iOS 17, *) {
+			ContentUnavailableView {
+				Label("Нет приложений", systemImage: "globe.desk.fill")
+			} description: {
+				Text("Репозиторий загружается...")
+			}
+		}
+	}
+
+	@ViewBuilder
+	private func appsListView() -> some View {
+		let contexts = Array(_sources).compactMap { source -> SourceAppsView.SourceRepositoryContext? in
+			guard let repo = viewModel.sources[source] else { return nil }
+			return SourceAppsView.SourceRepositoryContext(sourceURL: source.sourceURL, repository: repo)
+		}
+		
+		SourceAppsTableRepresentableView(
+			sourceContexts: contexts,
+			searchText: $_searchText,
+			sortOption: $_sortOption,
+			sortAscending: $_sortAscending,
+			onSelect: { _selectedRoute = $0 }
+		)
+		.ignoresSafeArea()
+	}
+
+	@ToolbarContentBuilder
+	private var toolbarContent: some ToolbarContent {
+		ToolbarItem(placement: .topBarTrailing) {
+			sortMenu
+		}
+	}
+
+	private var sortMenu: some View {
+		Menu {
+			sortMenuContent
+		} label: {
+			Image(systemName: "line.3.horizontal.decrease")
+		}
+	}
+
+	@ViewBuilder
+	private var sortMenuContent: some View {
+		Section("Сортировка") {
+			ForEach(SourceAppsView.SortOption.allCases, id: \.displayName) { opt in
+				sortButton(for: opt)
+			}
+		}
+	}
+
+	private func sortButton(for opt: SourceAppsView.SortOption) -> some View {
+		Button {
+			if _sortOption == opt {
+				_sortAscending.toggle()
+			} else {
+				_sortOption = opt
+				_sortAscending = true
+			}
+		} label: {
+			HStack {
+				Text(opt.displayName)
+				if _sortOption == opt {
+					Image(systemName: _sortAscending ? "chevron.up" : "chevron.down")
 				}
 			}
 		}
