@@ -32,62 +32,11 @@ struct SourcesView: View {
 				if !viewModel.isFinished {
 					ProgressView()
 				} else {
-					let loadedSources = Array(_sources).compactMap { viewModel.sources[$0] }
-					if loadedSources.isEmpty {
-						if #available(iOS 17, *) {
-							ContentUnavailableView {
-								Label("Нет приложений", systemImage: "globe.desk.fill")
-							} description: {
-								Text("Репозиторий загружается...")
-							}
-						}
-					} else {
-						SourceAppsTableRepresentableView(
-							sources: loadedSources,
-							searchText: $_searchText,
-							sortOption: $_sortOption,
-							sortAscending: $_sortAscending,
-							onSelect: { _selectedRoute = $0 }
-						)
-						.ignoresSafeArea()
-					}
+					contentView
 				}
 			}
 			.searchable(text: $_searchText, placement: .platform())
-			.toolbar {
-				NBToolbarButton(
-					systemImage: "plus",
-					style: .icon,
-					placement: .topBarTrailing
-				) {
-					_isAddingPresenting = true
-				}
-				NBToolbarMenu(
-					systemImage: "line.3.horizontal.decrease",
-					style: .icon,
-					placement: .topBarTrailing
-				) {
-					Section("Сортировка") {
-						ForEach(SourceAppsView.SortOption.allCases, id: \.displayName) { opt in
-							Button {
-								if _sortOption == opt {
-									_sortAscending.toggle()
-								} else {
-									_sortOption = opt
-									_sortAscending = true
-								}
-							} label: {
-								HStack {
-									Text(opt.displayName)
-									if _sortOption == opt {
-										Image(systemName: _sortAscending ? "chevron.up" : "chevron.down")
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			.toolbar { toolbarContent }
 			.navigationDestinationIfAvailable(item: $_selectedRoute) { route in
 				SourceAppsDetailView(source: route.source, app: route.app)
 			}
@@ -103,6 +52,65 @@ struct SourcesView: View {
 		}
 		.onChange(of: _sortOption) { newValue in
 			_sortOptionRawValue = newValue.rawValue
+		}
+	}
+
+	// MARK: - Subviews
+	@ViewBuilder
+	private var contentView: some View {
+		let loadedSources = Array(_sources).compactMap { viewModel.sources[$0] }
+		if loadedSources.isEmpty {
+			if #available(iOS 17, *) {
+				ContentUnavailableView {
+					Label("Нет приложений", systemImage: "globe.desk.fill")
+				} description: {
+					Text("Репозиторий загружается...")
+				}
+			}
+		} else {
+			SourceAppsTableRepresentableView(
+				sources: loadedSources,
+				searchText: $_searchText,
+				sortOption: $_sortOption,
+				sortAscending: $_sortAscending,
+				onSelect: { _selectedRoute = $0 }
+			)
+			.ignoresSafeArea()
+		}
+	}
+
+	@ToolbarContentBuilder
+	private var toolbarContent: some ToolbarContent {
+		ToolbarItem(placement: .topBarTrailing) {
+			Button(action: { _isAddingPresenting = true }) {
+				Image(systemName: "plus")
+			}
+		}
+
+		ToolbarItem(placement: .topBarTrailing) {
+			Menu {
+				Section("Сортировка") {
+					ForEach(SourceAppsView.SortOption.allCases, id: \.displayName) { opt in
+						Button {
+							if _sortOption == opt {
+								_sortAscending.toggle()
+							} else {
+								_sortOption = opt
+								_sortAscending = true
+							}
+						} label: {
+							HStack {
+								Text(opt.displayName)
+								if _sortOption == opt {
+									Image(systemName: _sortAscending ? "chevron.up" : "chevron.down")
+								}
+							}
+						}
+					}
+				}
+			} label: {
+				Image(systemName: "line.3.horizontal.decrease")
+			}
 		}
 	}
 }
