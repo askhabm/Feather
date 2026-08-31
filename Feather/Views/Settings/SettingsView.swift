@@ -49,7 +49,7 @@ struct SettingsView: View {
 				}
 				NBSection("Разработчик") {
 					Button {
-						UIApplication.open("https://t.me/exxcofluxxiano")
+						UIApplication.open("https://t.me/iphonmods")
 					} label: {
 						Label("exxcofluxxiano", systemImage: "paperplane.fill")
 					}
