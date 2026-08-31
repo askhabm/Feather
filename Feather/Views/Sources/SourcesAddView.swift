@@ -191,7 +191,7 @@ struct SourcesAddView: View {
 			for url in urls {
 				group.addTask {
 					await withCheckedContinuation { continuation in
-						dataService.fetch<ASRepository>(from: url) { (result: RepositoryDataHandler) in
+						dataService.fetch(from: url) { (result: RepositoryDataHandler) in
 							switch result {
 							case .success(let repo):
 								Task { @MainActor in
