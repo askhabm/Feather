@@ -20,7 +20,6 @@ struct UpdateDownloadView: View {
 	// GitHub репо askhabm
 	private let _owner = "askhabm"
 	private let _repo = "Feather"
-	private let _manifestURL = "https://your-server.com/manifest.plist" // Замени на свой URL
 	
 	var body: some View {
 		NBNavigationView(.localized("Download Update")) {
@@ -155,7 +154,7 @@ struct UpdateDownloadView: View {
 		// Генерируем manifest.plist с ссылкой на IPA
 		let manifestContent = _generateManifest(ipaUrl: ipaUrl)
 		
-		// Сохраняем в Documents
+		// Сохраня��м в Documents
 		let documentsPath = FileManager.default.urls(
 			for: .documentDirectory,
 			in: .userDomainMask
