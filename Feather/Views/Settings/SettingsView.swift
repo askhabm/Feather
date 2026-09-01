@@ -47,6 +47,13 @@ struct SettingsView: View {
 				} footer: {
 					Text("Добавьте сертификат для подписи приложений.")
 				}
+				NBSection(.localized("Доп. настройки")) {
+    NavigationLink(destination: InstallationView()) {
+        Label(.localized("Installation"), systemImage: "arrow.down.circle")
+    }
+} footer: {
+    Text(.localized("Настройки способа установки."))
+}
 				NBSection("Наш Telegram") {
 					Button {
 						UIApplication.open("https://t.me/iphonmods")
