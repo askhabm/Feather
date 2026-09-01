@@ -11,19 +11,16 @@ import NimbleViews
 // MARK: - View
 struct UpdateDownloadView: View {
 	@Environment(\.dismiss) var dismiss
-	@State private var _downloadedFile: URL?
-	@State private var _isDownloading = false
-	@State private var _downloadProgress: Double = 0
-	@State private var _errorMessage: String?
-	@State private var _showError = false
 	@State private var _releases: [GitHubRelease] = []
 	@State private var _selectedRelease: GitHubRelease?
 	@State private var _isLoadingReleases = false
+	@State private var _errorMessage: String?
+	@State private var _showError = false
 	
 	// GitHub репо askhabm
 	private let _owner = "askhabm"
 	private let _repo = "Feather"
-	private let _fileManager = FileManager.default
+	private let _manifestURL = "https://your-server.com/manifest.plist" // Замени на свой URL
 	
 	var body: some View {
 		NBNavigationView(.localized("Download Update")) {
@@ -50,8 +47,14 @@ struct UpdateDownloadView: View {
 										Text(release.tagName)
 											.font(.headline)
 											.foregroundColor(.primary)
+										if let body = release.body, !body.isEmpty {
+											Text(body.prefix(50) + "...")
+												.font(.footnote)
+												.foregroundColor(.secondary)
+												.lineLimit(1)
+										}
 										Text(release.publishedAt.formatted(date: .abbreviated, time: .omitted))
-											.font(.footnote)
+											.font(.caption)
 											.foregroundColor(.secondary)
 									}
 									Spacer()
@@ -67,41 +70,31 @@ struct UpdateDownloadView: View {
 				
 				if let selected = _selectedRelease {
 					Section {
-						if _isDownloading {
-							HStack {
-								ProgressView(value: _downloadProgress)
-								Text(verbatim: "\(Int(_downloadProgress * 100))%")
-									.font(.footnote)
-									.foregroundColor(.secondary)
-							}
-						} else if _downloadedFile != nil {
-							HStack {
-								Image(systemName: "checkmark.circle.fill")
-									.foregroundColor(.green)
-								Text(.localized("Downloaded"))
-							}
-							Button(role: .destructive, action: _deleteDownloadedFile) {
-								Label(.localized("Delete"), systemImage: "trash")
-							}
-						} else {
-							Button(action: _startDownload) {
-								Label(.localized("Download"), systemImage: "arrow.down.circle")
+						if let ipaAsset = selected.assets.first(where: { $0.name.hasSuffix(".ipa") }) {
+							Button(action: {
+								_openWebInstall(ipaUrl: ipaAsset.downloadUrl.absoluteString)
+							}) {
+								Label(.localized("Install via Web"), systemImage: "safari")
 									.frame(maxWidth: .infinity)
 							}
 							.buttonStyle(.bordered)
 							.tint(.accentColor)
+						} else {
+							Text(.localized("No IPA found in this release"))
+								.foregroundColor(.secondary)
+								.font(.footnote)
 						}
+					} footer: {
+						Text(.localized("Opens in Safari for installation. You can sign and install with your certificate."))
 					}
 				}
 				
-				if _downloadedFile != nil {
-					Section {
-						NavigationLink(destination: InstallationView()) {
-							Label(.localized("Go to Installation"), systemImage: "arrow.forward.circle")
-						}
-					} footer: {
-						Text(.localized("Open the downloaded IPA in Installation view to sign and install it."))
+				Section {
+					Link(destination: URL(string: "https://github.com/\(_owner)/\(_repo)/releases")!) {
+						Label(.localized("View on GitHub"), systemImage: "link")
 					}
+				} footer: {
+					Text(.localized("Open full release notes and download options."))
 				}
 			}
 		}
@@ -158,74 +151,68 @@ struct UpdateDownloadView: View {
 		}.resume()
 	}
 	
-	private func _startDownload() {
-		guard let release = _selectedRelease,
-			  let ipaAsset = release.assets.first(where: { $0.name.hasSuffix(".ipa") }) else {
-			_errorMessage = .localized("No IPA found in this release")
+	private func _openWebInstall(ipaUrl: String) {
+		// Генерируем manifest.plist с ссылкой на IPA
+		let manifestContent = _generateManifest(ipaUrl: ipaUrl)
+		
+		// Сохраняем в Documents
+		let documentsPath = FileManager.default.urls(
+			for: .documentDirectory,
+			in: .userDomainMask
+		)[0]
+		let manifestURL = documentsPath.appendingPathComponent("manifest.plist")
+		
+		do {
+			try manifestContent.write(to: manifestURL, atomically: true, encoding: .utf8)
+			
+			// Генерируем ссылку для установки
+			let manifestURLEncoded = manifestURL.absoluteString
+				.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+			let installURL = "itms-services://?action=download-manifest&url=\(manifestURLEncoded)"
+			
+			if let url = URL(string: installURL) {
+				UIApplication.shared.open(url)
+			}
+		} catch {
+			_errorMessage = .localized("Failed to open installer")
 			_showError = true
-			return
-		}
-		
-		_isDownloading = true
-		_downloadProgress = 0
-		
-		let delegate = DownloadDelegate { progress in
-			DispatchQueue.main.async {
-				self._downloadProgress = progress
-			}
-		}
-		
-		let session = URLSession(
-			configuration: .default,
-			delegate: delegate,
-			delegateQueue: nil
-		)
-		
-		let task = session.downloadTask(with: ipaAsset.downloadUrl) { [weak self] location, response, error in
-			self?._handleDownloadComplete(location: location, error: error)
-		}
-		
-		task.resume()
-	}
-	
-	private func _handleDownloadComplete(location: URL?, error: Error?) {
-		DispatchQueue.main.async {
-			_isDownloading = false
-			
-			if let error = error {
-				_errorMessage = error.localizedDescription
-				_showError = true
-				return
-			}
-			
-			guard let location = location else {
-				_errorMessage = .localized("Download failed")
-				_showError = true
-				return
-			}
-			
-			let documentsPath = _fileManager.urls(
-				for: .documentDirectory,
-				in: .userDomainMask
-			)[0]
-			let savedURL = documentsPath.appendingPathComponent("Feather-update.ipa")
-			
-			try? _fileManager.removeItem(at: savedURL)
-			
-			do {
-				try _fileManager.moveItem(at: location, to: savedURL)
-				_downloadedFile = savedURL
-			} catch {
-				_errorMessage = .localized("Failed to save file")
-				_showError = true
-			}
 		}
 	}
 	
-	private func _deleteDownloadedFile() {
-		guard let file = _downloadedFile else { return }
-		try? _fileManager.removeItem(at: file)
-		_downloadedFile = nil
+	private func _generateManifest(ipaUrl: String) -> String {
+		return """
+		<?xml version="1.0" encoding="UTF-8"?>
+		<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+		<plist version="1.0">
+		<dict>
+			<key>items</key>
+			<array>
+				<dict>
+					<key>assets</key>
+					<array>
+						<dict>
+							<key>kind</key>
+							<string>software-package</string>
+							<key>url</key>
+							<string>\(ipaUrl)</string>
+						</dict>
+					</array>
+					<key>metadata</key>
+					<dict>
+						<key>bundle-identifier</key>
+						<string>com.askhabm.feather</string>
+						<key>bundle-version</key>
+						<string>1.0</string>
+						<key>kind</key>
+						<string>software</string>
+						<key>title</key>
+						<string>Feather</string>
+					</dict>
+				</dict>
+			</array>
+		</dict>
+		</plist>
+		"""
 	}
 }
 
@@ -233,6 +220,7 @@ struct UpdateDownloadView: View {
 struct GitHubRelease: Codable {
 	let id: Int
 	let tagName: String
+	let body: String?
 	let isDraft: Bool
 	let publishedAt: Date
 	let assets: [GitHubAsset]
@@ -240,6 +228,7 @@ struct GitHubRelease: Codable {
 	enum CodingKeys: String, CodingKey {
 		case id
 		case tagName = "tag_name"
+		case body
 		case isDraft = "draft"
 		case publishedAt = "published_at"
 		case assets
@@ -253,32 +242,6 @@ struct GitHubAsset: Codable {
 	enum CodingKeys: String, CodingKey {
 		case name
 		case downloadUrl = "browser_download_url"
-	}
-}
-
-// MARK: - Download Delegate
-private class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
-	let progressCallback: (Double) -> Void
-	
-	init(progressCallback: @escaping (Double) -> Void) {
-		self.progressCallback = progressCallback
-	}
-	
-	func urlSession(
-		_ session: URLSession,
-		downloadTask: URLSessionDownloadTask,
-		didFinishDownloadingTo location: URL
-	) { }
-	
-	func urlSession(
-		_ session: URLSession,
-		downloadTask: URLSessionDownloadTask,
-		didWriteData bytesWritten: Int64,
-		totalBytesWritten: Int64,
-		totalBytesExpectedToWrite: Int64
-	) {
-		let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-		progressCallback(progress)
 	}
 }
 
