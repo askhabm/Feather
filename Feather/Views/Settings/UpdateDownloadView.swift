@@ -89,7 +89,7 @@ struct UpdateDownloadView: View {
 				}
 				
 				Section {
-					Link(destination: URL(string: "https://github.com/\(_owner)/\(_repo)/releases")!) {
+					Link(destination: URL(string: "https://github.com/\(_owner)/\(_repo)/releases/tag/2.9.0")!) {
 						Label(.localized("View on GitHub"), systemImage: "link")
 					}
 				} footer: {
