@@ -53,7 +53,7 @@ struct ServerView: View {
 	private let _serverMethods: [String] = [.localized("Fully Local"), .localized("Semi Local")]
 	
 	private let _dataService = NBFetchService()
-	private let _serverPackUrl = "https://backloop.dev/pack.json"
+	private let _serverPackUrl = "https://sslip.io/pack.json"
 	
 	// MARK: Body
 	var body: some View {
@@ -85,7 +85,6 @@ struct ServerView: View {
 									message: .localized("Failed to download, check your internet connection and try again.")
 								)
 							}
-						}
 					}
 				}
 			}

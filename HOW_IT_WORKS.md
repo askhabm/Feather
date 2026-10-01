@@ -8,7 +8,7 @@ To start off, we need a validly signed IPA. We can achieve this with Zsign, usin
 
 - Use a locally hosted server for hosting the IPA files used for installation, including other assets such as icons, etc. 
   - On iOS 18, we need a few entitlements: `Associated Domains`, `Custom Network Protocol`, `MDM Managed Associated Domains`, `Network Extensions`
-- Make sure to include valid https SSL certificates as the next URL requires a valid HTTPS connection, for us we use [*.backloop.dev](https://backloop.dev/).
+- Make sure to include valid https SSL certificates as the next URL requires a valid HTTPS connection, for us we use [*.sslip.io](https://sslip.io/).
 - We then use `itms-services://?action=download-manifest&url=<PLIST_URL>` to attempt to initiate an install, by using `UIApplication.open`.
 
 However, due to the changes with iOS 18 with entitlements we will need to provide an alternative way of installing. We have two options here, a way to install locally fully using the local server (the one I have just shown) or use an external HTTPS server that serves as our middle man for our `PLIST_URL`, while having the files still local to us. Lets show the latter.
@@ -27,5 +27,3 @@ Since itms-services initiates the install automatically, we don't need to do any
 - When preparing for installation, we need to establish another connection but for `AFC` using the TCP provider.
 - Once the connection was established we need to created a staging directory to `/PublicStaging/` and upload our IPA there.
 - Then, using our connection to `AFC` we can command it to install that IPA directly. Similar to `ideviceinstaller`, but fully on your phone.
-
-Due to how it works right now we need both a VPN and a lockdownd pairing file, this means you will need a computer for its initial setup. Though, if you don't want to do these you can just use the server way of installing instead (but at a cost of less reliability). 

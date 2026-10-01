@@ -1,29 +1,12 @@
-[![GitHub Release](https://img.shields.io/github/v/release/claration/Feather?include_prereleases)](https://github.com/claration/Feather/releases)
-[![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/claration/Feather/total)](https://github.com/claration/Feather/releases)
-[![GitHub License](https://img.shields.io/github/license/claration/Feather?color=%23C96FAD)](https://github.com/claration/Feather/blob/main/LICENSE)
-[![Sponsor Me](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/khcrysalis)
+# Feather
 
-<div align="center">
-
-<img title="Feather" alt="Feather" height="180" src=".github/landing.png">
-
-Sideloading app meant for developer certificates.
-
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/demo-dark.png"><source media="(prefers-color-scheme: light)" srcset=".github/demo-light.png"><img alt="Feather" src=".github/demo-light.png"></picture></p>
-
-
-</div>
+Feather is a sideloading utility app for iOS and macOS that allows you to install unsigned IPA files on your device. By utilizing a locally hosted server, you can deploy your app installations securely and efficiently.
 
 ## Features
 
-- User friendly, and clean UI.
-- Sign and install applications.
-- Supports [AltStore](https://faq.altstore.io/distribute-your-apps/make-a-source#apps) repositories.
-- View detailed information about apps and your certificates.
-- Configurable signing options mainly for modifying the app, such as appearance and allowing support for the files app.
-  - This includes patching apps for compatibility and Liquid Glass.
-- Tweak support for advanced users, using [Ellekit](https://github.com/tealbathingsuit/ellekit) for injection. 
-  - Supports injecting `.deb` and `.dylib` files.
+- Installs unsigned IPA files to your device, so you can use your own test builds
+- Install tweaks to system applications
+- Supports injecting `.deb` and `.dylib` files.
 - Actively maintained: always ensuring most apps get installed properly.
 - No tracking or analytics, ensuring user privacy.
 - Of course, open source and free.
@@ -58,7 +41,7 @@ To properly contribute and test potentially test localizations, you can head ove
 
 - [Samara](https://github.com/claration) - The maker
 - [idevice](https://github.com/jkcoxson/idevice) - Backend for builds with this included, used for communication with `installd`.
-- [*.backloop.dev](https://backloop.dev/) - localhost with public CA signed SSL certificate
+- [*.sslip.io](https://sslip.io/) - localhost with public CA signed SSL certificate
 - [Vapor](https://github.com/vapor/vapor) - A server-side Swift HTTP web framework.
 - [Zsign](https://github.com/zhlynn/zsign) - Allowing to sign on-device, reimplimented to work on other platforms such as iOS.
 - [LiveContainer](https://github.com/LiveContainer/LiveContainer) - Fixes/some help
