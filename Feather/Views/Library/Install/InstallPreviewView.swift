@@ -19,6 +19,7 @@ struct InstallPreviewView: View {
 	@AppStorage("Feather.serverMethod") private var _serverMethod: Int = 0
 	@State private var _isWebviewPresenting = false
 	@State private var progressTask: Task<Void, Never>?
+	@State private var _didFallbackToSemiLocal = false
 	
 	var app: AppInfoPresentable
 	@StateObject var viewModel: InstallerStatusViewModel
@@ -80,12 +81,36 @@ struct InstallPreviewView: View {
 				}
 				
 				switch newStatus {
-				case .completed, .broken(_):
+				case .completed:
 					progressTask?.cancel()
 					progressTask = nil
 					#if !targetEnvironment(macCatalyst)
 					BackgroundAudioManager.shared.stop()
 					#endif
+
+					if _didFallbackToSemiLocal {
+						_serverMethod = 0
+						UserDefaults.standard.set(0, forKey: "Feather.serverMethod")
+						_didFallbackToSemiLocal = false
+					}
+
+				case .broken(_):
+					progressTask?.cancel()
+					progressTask = nil
+					#if !targetEnvironment(macCatalyst)
+					BackgroundAudioManager.shared.stop()
+					#endif
+
+					if _serverMethod == 0 && !_didFallbackToSemiLocal {
+						_didFallbackToSemiLocal = true
+						_serverMethod = 1
+						UserDefaults.standard.set(1, forKey: "Feather.serverMethod")
+
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+							_isWebviewPresenting = true
+						}
+					}
+
 				default:
 					break
 				}
