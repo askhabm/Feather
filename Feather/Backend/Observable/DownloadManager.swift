@@ -71,9 +71,12 @@ class DownloadManager: NSObject, ObservableObject {
 	
 	override init() {
 	super.init()
-	let configuration = URLSessionConfiguration.default
+	let configuration = URLSessionConfiguration.background(withIdentifier: "com.feather.backgrounddownload")
+	configuration.isDiscretionary = false
+	configuration.sessionSendsLaunchEvents = true
 	_session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
 }
+
 
 	
 	func startDownload(
