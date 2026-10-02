@@ -98,13 +98,10 @@ private func _updateBackgroundAudioState() {
 		
 		downloads.append(download)
 		
-		#if !targetEnvironment(macCatalyst)
-		if #available(iOS 26.0, *) {
-			BackgroundTaskManager.shared.startTask(for: id, filename: url.lastPathComponent)
-		} else {
-			_updateBackgroundAudioState()
-		}
-		#endif
+	    #if !targetEnvironment(macCatalyst)
+        _updateBackgroundAudioState()
+        #endif
+
 		
 		return download
 	}
