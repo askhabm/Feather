@@ -57,25 +57,23 @@ class DownloadManager: NSObject, ObservableObject {
 	private var _session: URLSession!
 	var backgroundCompletionHandler: (() -> Void)?
 	
-	#if !targetEnvironment(macCatalyst)
-	private func _updateBackgroundAudioState() {
-		if #unavailable(iOS 26.0){
-			if !downloads.isEmpty {
-				BackgroundAudioManager.shared.start()
-			} else  {
-				BackgroundAudioManager.shared.stop()
-			}
-		}
+#if !targetEnvironment(macCatalyst)
+private func _updateBackgroundAudioState() {
+	if !downloads.isEmpty {
+		BackgroundAudioManager.shared.start()
+	} else {
+		BackgroundAudioManager.shared.stop()
 	}
-	#endif
+}
+#endif
+
 	
 	override init() {
 	super.init()
-	let configuration = URLSessionConfiguration.background(withIdentifier: "com.feather.backgrounddownload")
-	configuration.isDiscretionary = false
-	configuration.sessionSendsLaunchEvents = true
+	let configuration = URLSessionConfiguration.default
 	_session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
 }
+
 
 
 	
