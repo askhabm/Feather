@@ -55,6 +55,7 @@ class DownloadManager: NSObject, ObservableObject {
 	}
 	
 	private var _session: URLSession!
+	var backgroundCompletionHandler: (() -> Void)?
 	
 	#if !targetEnvironment(macCatalyst)
 	private func _updateBackgroundAudioState() {
@@ -70,7 +71,9 @@ class DownloadManager: NSObject, ObservableObject {
 	
 	override init() {
 		super.init()
-		let configuration = URLSessionConfiguration.default
+		let configuration = URLSessionConfiguration.background(withIdentifier: "com.feather.backgrounddownload")
+		configuration.isDiscretionary = false
+		configuration.sessionSendsLaunchEvents = true
 		_session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
 	}
 	
@@ -251,6 +254,13 @@ extension DownloadManager: URLSessionDownloadDelegate {
 			if let index = self.getDownloadIndex(by: download.id) {
 				self.downloads.remove(at: index)
 			}
+		}
+	}
+	
+	func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+		DispatchQueue.main.async {
+			self.backgroundCompletionHandler?()
+			self.backgroundCompletionHandler = nil
 		}
 	}
 }
