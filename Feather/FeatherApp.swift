@@ -144,7 +144,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
    	ResetView.clearWorkCache()
    	_addDefaultCertificates()
    	_addDefaultSource()
+   	_checkAndUpdateSSLCertificatesIfNeeded()
    	return true
+   }
+   
+   func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
+   	DownloadManager.shared.backgroundCompletionHandler = completionHandler
    }
    
    private func _createPipeline() {
@@ -246,5 +251,19 @@ class AppDelegate: NSObject, UIApplicationDelegate {
    	}
    	
    	UserDefaults.standard.set(true, forKey: "feather.didAddDefaultSource")
+   }
+   
+   private func _checkAndUpdateSSLCertificatesIfNeeded() {
+   	let lastUpdateKey = "Feather.lastSSLUpdate"
+   	let now = Date()
+   	let lastUpdate = UserDefaults.standard.object(forKey: lastUpdateKey) as? Date ?? .distantPast
+   	
+   	guard now.timeIntervalSince(lastUpdate) > 86400 else { return } // 24 часа
+   	
+   	FR.downloadSSLCertificates(from: "https://backloop.dev/pack.json") { success in
+   		if success {
+   			UserDefaults.standard.set(now, forKey: lastUpdateKey)
+   		}
+   	}
    }
 }
