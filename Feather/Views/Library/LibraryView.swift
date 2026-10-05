@@ -77,7 +77,7 @@ struct LibraryView: View {
 					_selectedScope == .all || _selectedScope == .signed
 				{
 					NBSection(
-						.localized("Подписанные"),
+						.localized("Установленные"),
 						secondary: _filteredSignedApps.count.description
 					) {
 						ForEach(_filteredSignedApps, id: \.uuid) { app in
@@ -98,7 +98,7 @@ struct LibraryView: View {
 					_selectedScope == .all || _selectedScope == .imported
 				{
 					NBSection(
-						.localized("Импортированные"),
+						.localized("Загруженные"),
 						secondary: _filteredImportedApps.count.description
 					) {
 						ForEach(_filteredImportedApps, id: \.uuid) { app in
@@ -326,8 +326,8 @@ extension LibraryView {
 		var displayName: String {
 			switch self {
 			case .all: return .localized("Все")
-			case .signed: return .localized("Подписан")
-			case .imported: return .localized("Импортированный")
+			case .signed: return .localized("Установлен")
+			case .imported: return .localized("Загружен")
 			}
 		}
 	}
