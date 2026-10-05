@@ -46,16 +46,12 @@ struct SigningView: View {
 	// MARK: Body
 	var body: some View {
 		NBNavigationView("", displayMode: .inline) {
-			Form {
-				_customizationOptions(for: app)
-				_cert()
-				_customizationProperties(for: app)
-				
-				// horrible
-				Rectangle()
-					.foregroundStyle(.clear)
-					.frame(height: 30)
-					.listRowBackground(EmptyView())
+			GeometryReader { geo in
+				Form {
+					_customizationOptions(for: app)
+				}
+				// примерная высота секции ~300, подстрой под себя
+				.contentMargins(.top, max(0, (geo.size.height - 300) / 2), for: .scrollContent)
 			}
 			.overlay {
 				VStack(spacing: 0) {
@@ -185,66 +181,6 @@ extension SigningView {
 					initialValue: _temporaryOptions.appVersion ?? (app.version ?? ""),
 					bindingValue: $_temporaryOptions.appVersion
 				)
-			}
-		}
-	}
-	
-	@ViewBuilder
-	private func _cert() -> some View {
-		NBSection(.localized("Подписать")) {
-			if let cert = _selectedCert() {
-				NavigationLink {
-					CertificatesView(selectedCert: $_temporaryCertificate)
-				} label: {
-					CertificatesCellView(
-						cert: cert
-					)
-				}
-			} else {
-				Text(.localized("Нет сертификата"))
-					.font(.footnote)
-					.foregroundColor(.disabled())
-			}
-		}
-	}
-	
-	@ViewBuilder
-	private func _customizationProperties(for app: AppInfoPresentable) -> some View {
-		NBSection(.localized("Расширенные настройки")) {
-			DisclosureGroup(.localized("Модифицировать")) {
-				NavigationLink(.localized("Existing Dylibs")) {
-					SigningDylibView(
-						app: app,
-						options: $_temporaryOptions.optional()
-					)
-				}
-				
-				NavigationLink(.localized("Frameworks & PlugIns")) {
-					SigningFrameworksView(
-						app: app,
-						options: $_temporaryOptions.optional()
-					)
-				}
-				#if NIGHTLY || DEBUG
-					NavigationLink(.localized("Entitlements") + " (BETA)") {
-						SigningEntitlementsView(
-							bindingValue: $_temporaryOptions.appEntitlementsFile
-						)
-					}
-				#endif
-				NavigationLink(.localized("Tweaks")) {
-					SigningTweaksView(
-						options: $_temporaryOptions
-					)
-				}
-			}
-			
-			NavigationLink(.localized("Параметры")) {
-				Form { SigningOptionsView(
-					options: $_temporaryOptions,
-					temporaryOptions: _optionsManager.options
-				)}
-				.navigationTitle(.localized("Параметры"))
 			}
 		}
 	}
