@@ -200,7 +200,7 @@ extension LibraryCellView {
 			Button(.localized("Установить"), systemImage: "square.and.arrow.down") {
 				selectedInstallAppPresenting = AnyApp(base: app)
 			}
-			Button(.localized("Подписать"), systemImage: "signature") {
+			Button(.localized("Установить"), systemImage: "signature") {
 				selectedSigningAppPresenting = AnyApp(base: app)
 			}
 		}
@@ -247,7 +247,7 @@ extension LibraryCellView {
 					selectedSigningAppPresenting = AnyApp(base: app)
 				} label: {
 					FRExpirationPillView(
-						title: .localized("Подписать"),
+						title: .localized("Установить"),
 						revoked: false,
 						expiration: nil
 					)
