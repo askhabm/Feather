@@ -47,12 +47,17 @@ struct SigningView: View {
 	var body: some View {
 		NBNavigationView("", displayMode: .inline) {
 			GeometryReader { geo in
-				Form {
-					_customizationOptions(for: app)
-				}
-				// примерная высота секции ~300, подстрой под себя
-				.contentMargins(.top, max(0, (geo.size.height - 300) / 2), for: .scrollContent)
-			}
+	Form {
+		// пустая строка сверху сдвигает секцию к центру
+		Color.clear
+			.frame(height: max(0, (geo.size.height - 300) / 2))
+			.listRowBackground(Color.clear)
+			.listRowSeparator(.hidden)
+			.listRowInsets(EdgeInsets())
+		_customizationOptions(for: app)
+	}
+}
+
 			.overlay {
 				VStack(spacing: 0) {
 					Spacer()
