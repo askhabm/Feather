@@ -14,6 +14,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	@Binding var searchText: String
 	@Binding var sortOption: SourceAppsView.SortOption
 	@Binding var sortAscending: Bool
+	var selectedCategory: String
 	var onSelect: (SourceAppsView.SourceAppRoute) -> Void
 	
 	func makeUIView(context: Context) -> UITableView {
@@ -63,13 +64,15 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 		let searchChanged = context.coordinator.searchText != searchText
 		let sortOptionChanged = context.coordinator.sortOption != sortOption
 		let sortDirectionChanged = context.coordinator.sortAscending != sortAscending
+		let categoryChanged = context.coordinator.selectedCategory != selectedCategory
 		
 		context.coordinator.sourceContexts = sourceContexts
 		context.coordinator.searchText = searchText
 		context.coordinator.sortOption = sortOption
 		context.coordinator.sortAscending = sortAscending
+		context.coordinator.selectedCategory = selectedCategory
 		
-		if sourcesChanged || searchChanged || sortOptionChanged || sortDirectionChanged {
+		if sourcesChanged || searchChanged || sortOptionChanged || sortDirectionChanged || categoryChanged {
 			context.coordinator.invalidateCache()
 		}
 	}
@@ -80,6 +83,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 			searchText: searchText,
 			sortOption: sortOption,
 			sortAscending: sortAscending,
+			selectedCategory: selectedCategory,
 			onSelect: onSelect
 		)
 	}
@@ -91,6 +95,7 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	var searchText: String
 	var sortOption: SourceAppsView.SortOption
 	var sortAscending: Bool
+	var selectedCategory: String
 	let onSelect: (SourceAppsView.SourceAppRoute) -> Void
 	
 	private var _groupedAppsByNameFirstLetter: [String: [SourceAppEntry]] = [:]
@@ -125,12 +130,14 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		searchText: String,
 		sortOption: SourceAppsView.SortOption,
 		sortAscending: Bool,
+		selectedCategory: String,
 		onSelect: @escaping (SourceAppsView.SourceAppRoute) -> Void
 	) {
 		self.sourceContexts = sourceContexts
 		self.searchText = searchText
 		self.sortOption = sortOption
 		self.sortAscending = sortAscending
+		self.selectedCategory = selectedCategory
 		self.onSelect = onSelect
 		super.init()
 		
@@ -139,14 +146,34 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		}
 	}
 	
+	// Читает поле "category" у приложения. Если такого поля в модели нет, вернёт пустую строку (сборка не упадёт).
+	private func _categoryValue(of app: ASRepository.App) -> String {
+		guard let child = Mirror(reflecting: app).children.first(where: { $0.label == "category" }) else {
+			return ""
+		}
+		var value: Any = child.value
+		let mirror = Mirror(reflecting: value)
+		if mirror.displayStyle == .optional {
+			guard let inner = mirror.children.first?.value else { return "" }
+			value = inner
+		}
+		return "\(value)".lowercased()
+	}
+	
 	private func _calculateSortedApps() -> [SourceAppEntry] {
-		let filtered = _allAppsWithSource.filter {
+		let searched = _allAppsWithSource.filter {
 			searchText.isEmpty ||
 			($0.app.id?.range(of: searchText, options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US")) != nil) ||
 				($0.app.name?.localizedCaseInsensitiveContains(searchText) ?? false) ||
 				($0.app.description?.localizedCaseInsensitiveContains(searchText) ?? false) ||
 				($0.app.subtitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
 				($0.app.localizedDescription?.localizedCaseInsensitiveContains(searchText) ?? false)
+		}
+		
+		// Фильтр по категории (значение "category" из json)
+		let filtered = searched.filter {
+			selectedCategory == "all" ||
+			_categoryValue(of: $0.app) == selectedCategory.lowercased()
 		}
 		
 		switch sortOption {
@@ -233,9 +260,11 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		case .date: entry = _groupedAppsByDate[_sortedSectionTitles[indexPath.section]]?[indexPath.row] ?? _sortedApps[indexPath.row]
 		}
 
+		// .margins(.vertical, 2) — уменьшенный отступ между строками (поменяй число, если нужно больше/меньше)
 		cell.contentConfiguration = UIHostingConfiguration {
 			SourceAppsCellView(sourceURL: entry.sourceURL, source: entry.source, app: entry.app)
 		}
+		.margins(.vertical, 2)
 		return cell
 	}
 	
