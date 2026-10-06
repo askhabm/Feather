@@ -16,6 +16,16 @@ struct SourcesView: View {
 	@AppStorage("Feather.sortOptionRawValue") private var _sortOptionRawValue: String = SourceAppsView.SortOption.default.rawValue
 	@AppStorage("Feather.sortAscending") private var _sortAscending: Bool = true
 	@State private var _sortOption: SourceAppsView.SortOption = .default
+	
+	// Категории: key = значение "category" в json, title = текст на кнопке
+	@State private var _selectedCategory = "all"
+	private let _categories: [(key: String, title: String)] = [
+		("all", "Все"),
+		("social", "Соц.Сети"),
+		("finance", "Финансы"),
+		("games", "Игры"),
+		("tools", "Инструменты")
+	]
 
 	@FetchRequest(
 		entity: AltSource.entity(),
@@ -25,15 +35,17 @@ struct SourcesView: View {
 
 	var body: some View {
 		NBNavigationView("Каталог") {
-			mainContent
-				.searchable(text: $_searchText, placement: .platform())
-				.toolbar { toolbarContent }
-				.navigationDestinationIfAvailable(item: $_selectedRoute) { route in
-					SourceAppsDetailView(sourceURL: route.sourceURL, source: route.source, app: route.app)
-				}
-				.refreshable {
-					await viewModel.fetchSources(_sources, refresh: true)
-				}
+			VStack(spacing: 0) {
+				_header
+				mainContent
+			}
+			.navigationBarHidden(true)
+			.navigationDestinationIfAvailable(item: $_selectedRoute) { route in
+				SourceAppsDetailView(sourceURL: route.sourceURL, source: route.source, app: route.app)
+			}
+			.refreshable {
+				await viewModel.fetchSources(_sources, refresh: true)
+			}
 		}
 		.task(id: Array(_sources)) {
 			await viewModel.fetchSources(_sources)
@@ -42,12 +54,59 @@ struct SourcesView: View {
 			_sortOptionRawValue = newValue.rawValue
 		}
 	}
+	
+	// MARK: - Header (закреплённая шапка как в zStore)
+	private var _header: some View {
+		VStack(alignment: .leading, spacing: 4) {
+			Text("Каталог")
+				.font(.largeTitle.bold())
+			Text("Приложения для твоего iPhone")
+				.font(.subheadline)
+				.foregroundStyle(.secondary)
+			
+			HStack(spacing: 8) {
+				Image(systemName: "magnifyingglass")
+					.foregroundStyle(.secondary)
+				TextField("Поиск приложений", text: $_searchText)
+					.autocorrectionDisabled()
+			}
+			.padding(10)
+			.background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+			.padding(.top, 8)
+			
+			ScrollView(.horizontal, showsIndicators: false) {
+				HStack(spacing: 8) {
+					ForEach(_categories, id: \.key) { c in
+						Button {
+							_selectedCategory = c.key
+						} label: {
+							Text(c.title)
+								.font(.subheadline.weight(.semibold))
+								.padding(.horizontal, 14)
+								.padding(.vertical, 8)
+								.background(
+									_selectedCategory == c.key ? Color.accentColor.opacity(0.15) : Color.clear,
+									in: Capsule()
+								)
+						}
+						.buttonStyle(.plain)
+					}
+				}
+			}
+			.padding(.top, 4)
+		}
+		.padding(.horizontal, 16)
+		.padding(.top, 8)
+		.padding(.bottom, 8)
+	}
 
 	// MARK: - Subviews
 	@ViewBuilder
 	private var mainContent: some View {
 		if !viewModel.isFinished {
+			Spacer()
 			ProgressView()
+			Spacer()
 		} else {
 			contentView
 		}
@@ -86,26 +145,13 @@ struct SourcesView: View {
 			searchText: $_searchText,
 			sortOption: $_sortOption,
 			sortAscending: $_sortAscending,
+			selectedCategory: _selectedCategory,
 			onSelect: { _selectedRoute = $0 }
 		)
-		.ignoresSafeArea()
+		.ignoresSafeArea(edges: .bottom)
 	}
 
-	@ToolbarContentBuilder
-	private var toolbarContent: some ToolbarContent {
-		ToolbarItem(placement: .topBarTrailing) {
-			sortMenu
-		}
-	}
-
-	private var sortMenu: some View {
-		Menu {
-			sortMenuContent
-		} label: {
-			Image(systemName: "line.3.horizontal.decrease")
-		}
-	}
-
+	// MARK: - Sort (кнопка сортировки убрана с экрана, функции оставлены)
 	@ViewBuilder
 	private var sortMenuContent: some View {
 		Section("Сортировка") {
