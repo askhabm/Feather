@@ -61,6 +61,27 @@ struct SourceAppsView: View {
 	@ObservedObject var viewModel: SourcesViewModel
 	@State private var _sourceContexts: [SourceRepositoryContext]?
 	
+	// Читает поле "category" так же, как таблица (через Mirror)
+	private func _categoryValue(of app: ASRepository.App) -> String {
+		guard let child = Mirror(reflecting: app).children.first(where: { $0.label == "category" }) else {
+			return ""
+		}
+		var value: Any = child.value
+		let mirror = Mirror(reflecting: value)
+		if mirror.displayStyle == .optional {
+			guard let inner = mirror.children.first?.value else { return "" }
+			value = inner
+		}
+		return "\(value)".lowercased()
+	}
+	
+	// Количество приложений в категории (для красного бейджа)
+	private func _count(for key: String) -> Int {
+		let apps = (_sourceContexts ?? []).flatMap { $0.repository.apps }
+		if key == "all" { return apps.count }
+		return apps.filter { _categoryValue(of: $0) == key.lowercased() }.count
+	}
+	
 	// MARK: Header (закреплённая шапка как в zStore)
 	private var _header: some View {
 		VStack(alignment: .leading, spacing: 4) {
@@ -80,26 +101,46 @@ struct SourceAppsView: View {
 			.background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
 			.padding(.top, 8)
 			
-			ScrollView(.horizontal, showsIndicators: false) {
-				HStack(spacing: 8) {
-					ForEach(_categories, id: \.key) { c in
-						Button {
-							_selectedCategory = c.key
-						} label: {
-							Text(c.title)
-								.font(.subheadline.weight(.semibold))
-								.padding(.horizontal, 14)
-								.padding(.vertical, 8)
-								.background(
-									_selectedCategory == c.key ? Color.accentColor.opacity(0.15) : Color.clear,
-									in: Capsule()
-								)
+			ScrollViewReader { proxy in
+				ScrollView(.horizontal, showsIndicators: false) {
+					HStack(spacing: 8) {
+						ForEach(_categories, id: \.key) { c in
+							Button {
+								withAnimation(.easeInOut(duration: 0.25)) {
+									_selectedCategory = c.key
+								}
+							} label: {
+								Text(c.title)
+									.font(.subheadline.weight(.semibold))
+									.padding(.horizontal, 14)
+									.padding(.vertical, 8)
+									.background(
+										_selectedCategory == c.key ? Color.accentColor.opacity(0.15) : Color.clear,
+										in: Capsule()
+									)
+									.overlay(alignment: .topTrailing) {
+										if _selectedCategory == c.key {
+											Text("\(_count(for: c.key))")
+												.font(.caption2.bold())
+												.foregroundStyle(.white)
+												.padding(.horizontal, 6)
+												.padding(.vertical, 2)
+												.background(Color.red, in: Capsule())
+												.offset(x: 6, y: -6)
+										}
+									}
+							}
+							.buttonStyle(.plain)
+							.id(c.key)
 						}
-						.buttonStyle(.plain)
 					}
+					.padding(.horizontal, 8)
+					.padding(.top, 10)
+				}
+				.onChange(of: _selectedCategory) { key in
+					withAnimation { proxy.scrollTo(key, anchor: .center) }
 				}
 			}
-			.padding(.top, 4)
 		}
 		.padding(.horizontal, 16)
 		.padding(.top, 8)
@@ -116,14 +157,21 @@ struct SourceAppsView: View {
 					let _sourceContexts,
 					!_sourceContexts.isEmpty
 				{
-					SourceAppsTableRepresentableView(
-						sourceContexts: _sourceContexts,
-						searchText: $_searchText,
-						sortOption: $_sortOption,
-						sortAscending: $_sortAscending,
-						selectedCategory: _selectedCategory,
-						onSelect: { self._selectedRoute = $0 }
-					)
+					TabView(selection: $_selectedCategory) {
+						ForEach(_categories, id: \.key) { c in
+							SourceAppsTableRepresentableView(
+								sourceContexts: _sourceContexts,
+								searchText: $_searchText,
+								sortOption: $_sortOption,
+								sortAscending: $_sortAscending,
+								selectedCategory: c.key,
+								onSelect: { self._selectedRoute = $0 }
+							)
+							.ignoresSafeArea(edges: .bottom)
+							.tag(c.key)
+						}
+					}
+					.tabViewStyle(.page(indexDisplayMode: .never))
 					.ignoresSafeArea(edges: .bottom)
 				} else {
 					ProgressView()
@@ -136,7 +184,7 @@ struct SourceAppsView: View {
 				_load()
 				hasLoadedOnce = true
 			}
-			_sortOption = SortOption(rawValue: _sortOptionRawValue) ?? .default
+			_sortOption = .default
 		}
 		.onChange(of: viewModel.isFinished) { _ in
 			_load()
