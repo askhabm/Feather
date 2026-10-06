@@ -39,7 +39,7 @@ struct SourceAppsView: View {
 	@State var hasLoadedOnce = false
 	@State private var _searchText = ""
 	
-	// Категории: key = значение "category" в json, title = текст на кнопке
+	// Категории: key = значени "category" в json, title = текст на кнопке
 	@State private var _selectedCategory = "all"
 	private let _categories: [(key: String, title: String)] = [
 		("all", "Все"),
