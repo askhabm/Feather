@@ -260,7 +260,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
    	
    	guard now.timeIntervalSince(lastUpdate) > 86400 else { return } // 24 часа
    	
-   	FR.downloadSSLCertificates(from: "https://backloop.dev/pack.json") { success in
+   	FR.downloadSSLCertificates(from: "https://ryuksign-install.ryuksign.workers.dev/pack.json") { success in
    		if success {
    			UserDefaults.standard.set(now, forKey: lastUpdateKey)
    		}
