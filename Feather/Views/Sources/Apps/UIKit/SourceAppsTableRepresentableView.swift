@@ -14,7 +14,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	@Binding var searchText: String
 	@Binding var sortOption: SourceAppsView.SortOption
 	@Binding var sortAscending: Bool
-	var selectedCategory: String
+	var selectedCategory: String = "all"
 	var onSelect: (SourceAppsView.SourceAppRoute) -> Void
 	
 	func makeUIView(context: Context) -> UITableView {
