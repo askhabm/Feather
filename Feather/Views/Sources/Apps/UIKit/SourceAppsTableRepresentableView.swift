@@ -146,7 +146,7 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		}
 	}
 	
-	// Читает поле "category" у приложения. Если такого поля в модели нет, вернёт пустую строку (сборка не упадёт).
+	// Читает пол "category" у приложения. Если такого поля в модели нет, вернёт пустую строку (сборка не упадёт).
 	private func _categoryValue(of app: ASRepository.App) -> String {
 		guard let child = Mirror(reflecting: app).children.first(where: { $0.label == "category" }) else {
 			return ""
