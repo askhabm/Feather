@@ -38,6 +38,16 @@ struct SourceAppsView: View {
 	@State var isLoading = true
 	@State var hasLoadedOnce = false
 	@State private var _searchText = ""
+	
+	// Категории: key = значение "category" в json, title = текст на кнопке
+	@State private var _selectedCategory = "all"
+	private let _categories: [(key: String, title: String)] = [
+		("all", "Все"),
+		("social", "Соц.Сети"),
+		("finance", "Финансы"),
+		("games", "Игры"),
+		("tools", "Инструменты")
+	]
 
 	private var _navigationTitle: String {
 		if object.count == 1 {
@@ -51,73 +61,76 @@ struct SourceAppsView: View {
 	@ObservedObject var viewModel: SourcesViewModel
 	@State private var _sourceContexts: [SourceRepositoryContext]?
 	
+	// MARK: Header (закреплённая шапка как в zStore)
+	private var _header: some View {
+		VStack(alignment: .leading, spacing: 4) {
+			Text(_navigationTitle)
+				.font(.largeTitle.bold())
+			Text("Приложения для твоего iPhone")
+				.font(.subheadline)
+				.foregroundStyle(.secondary)
+			
+			HStack(spacing: 8) {
+				Image(systemName: "magnifyingglass")
+					.foregroundStyle(.secondary)
+				TextField("Поиск приложений", text: $_searchText)
+					.autocorrectionDisabled()
+			}
+			.padding(10)
+			.background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+			.padding(.top, 8)
+			
+			ScrollView(.horizontal, showsIndicators: false) {
+				HStack(spacing: 8) {
+					ForEach(_categories, id: \.key) { c in
+						Button {
+							_selectedCategory = c.key
+						} label: {
+							Text(c.title)
+								.font(.subheadline.weight(.semibold))
+								.padding(.horizontal, 14)
+								.padding(.vertical, 8)
+								.background(
+									_selectedCategory == c.key ? Color.accentColor.opacity(0.15) : Color.clear,
+									in: Capsule()
+								)
+						}
+						.buttonStyle(.plain)
+					}
+				}
+			}
+			.padding(.top, 4)
+		}
+		.padding(.horizontal, 16)
+		.padding(.top, 8)
+		.padding(.bottom, 8)
+	}
+	
 	// MARK: Body
 	var body: some View {
-		ZStack {
-			if
-				let _sourceContexts,
-				!_sourceContexts.isEmpty
-			{
-				SourceAppsTableRepresentableView(
-					sourceContexts: _sourceContexts,
-					searchText: $_searchText,
-					sortOption: $_sortOption,
-					sortAscending: $_sortAscending,
-					onSelect: {self._selectedRoute = $0}
-				)
-				.ignoresSafeArea()
-			} else {
-				ProgressView()
-			}
-		}
-		.navigationTitle(_navigationTitle)
-		.searchable(text: $_searchText, placement: .platform())
-		.toolbarTitleMenu {
-			if
-				let _sourceContexts,
-				_sourceContexts.count == 1
-			{
-				if let url = _sourceContexts[0].repository.website {
-					Button(.localized("Visit Website"), systemImage: "globe") {
-						UIApplication.open(url)
-					}
-				}
-				
-				if let url = _sourceContexts[0].repository.patreonURL {
-					Button(.localized("Visit Patreon"), systemImage: "dollarsign.circle") {
-						UIApplication.open(url)
-					}
-				}
-			}
+		VStack(spacing: 0) {
+			_header
 			
-			Divider()
-			
-			Button(.localized("Copy"), systemImage: "doc.on.doc") {
-				guard !object.isEmpty else {
-					UIAlertController.showAlertWithOk(
-						title: .localized("Error"),
-						message: .localized("No sources to copy")
+			ZStack {
+				if
+					let _sourceContexts,
+					!_sourceContexts.isEmpty
+				{
+					SourceAppsTableRepresentableView(
+						sourceContexts: _sourceContexts,
+						searchText: $_searchText,
+						sortOption: $_sortOption,
+						sortAscending: $_sortAscending,
+						selectedCategory: _selectedCategory,
+						onSelect: { self._selectedRoute = $0 }
 					)
-					return
+					.ignoresSafeArea(edges: .bottom)
+				} else {
+					ProgressView()
 				}
-				UIPasteboard.general.string = object.map {
-					$0.sourceURL!.absoluteString
-				}.joined(separator: "\n")
-				UIAlertController.showAlertWithOk(
-					title: .localized("Success"),
-					message: .localized("Sources copied to clipboard")
-				)
 			}
 		}
-		.toolbar {
-			NBToolbarMenu(
-				systemImage: "line.3.horizontal.decrease",
-				style: .icon,
-				placement: .topBarTrailing
-			) {
-				_sortActions()
-			}
-		}
+		.navigationBarHidden(true)
 		.onAppear {
 			if !hasLoadedOnce, viewModel.isFinished {
 				_load()
