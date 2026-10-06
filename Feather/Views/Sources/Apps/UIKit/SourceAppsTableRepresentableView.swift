@@ -283,7 +283,15 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		}
 	}
 	
+	// ИЗМЕНЕНО: новая функция, высота заголовка 0 в обычном режиме
+	func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+		sortOption == .default ? 0 : UITableView.automaticDimension
+	}
+	
 	func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+		// ИЗМЕНЕНО: в обычном режиме строку «N Приложений» не показываем
+		if sortOption == .default { return nil }
+		
 		let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "SectionHeader")
 		let title: String
 		
