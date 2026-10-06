@@ -43,7 +43,7 @@ struct SourceAppsView: View {
 	@State private var _selectedCategory = "all"
 	private let _categories: [(key: String, title: String)] = [
 		("all", "Все"),
-		("social", "Соц.Сети"),
+		("social", "Соцсети"),
 		("finance", "Финансы"),
 		("games", "Игры"),
 		("tools", "Инструменты")
@@ -109,27 +109,27 @@ struct SourceAppsView: View {
 								withAnimation(.easeInOut(duration: 0.25)) {
 									_selectedCategory = c.key
 								}
-							} label: {
-								Text(c.title)
-									.font(.subheadline.weight(.semibold))
-									.padding(.horizontal, 14)
-									.padding(.vertical, 8)
-									.background(
-										_selectedCategory == c.key ? Color.accentColor.opacity(0.15) : Color.clear,
-										in: Capsule()
-									)
-									.overlay(alignment: .topTrailing) {
-										if _selectedCategory == c.key {
-											Text("\(_count(for: c.key))")
-												.font(.caption2.bold())
-												.foregroundStyle(.white)
-												.padding(.horizontal, 6)
-												.padding(.vertical, 2)
-												.background(Color.red, in: Capsule())
-												.offset(x: 6, y: -6)
-										}
-									}
-							}
+						} label: {
+	Text(c.title)
+		.font(.subheadline.weight(.semibold))
+		.padding(.horizontal, 14)
+		.padding(.vertical, 8)
+		.background(
+			_selectedCategory == c.key ? Color.accentColor.opacity(0.15) : Color.gray.opacity(0.15),
+			in: Capsule()
+		)
+		.overlay(alignment: .topTrailing) {
+			if _selectedCategory == c.key {
+				Text("\(_count(for: c.key))")
+					.font(.caption2.bold())
+					.foregroundStyle(.white)
+					.padding(.horizontal, 6)
+					.padding(.vertical, 2)
+					.background(Color.red, in: Capsule())
+					.offset(x: 6, y: -6)
+			}
+		}
+}
 							.buttonStyle(.plain)
 							.id(c.key)
 						}
