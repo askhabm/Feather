@@ -82,7 +82,7 @@ struct SourceAppsView: View {
 		return apps.filter { _categoryValue(of: $0) == key.lowercased() }.count
 	}
 	
-	// MARK: Header (закреплённая шапка как в zStore)
+	// MARK: Header (закреплённая шапка)
 	private var _header: some View {
 		VStack(alignment: .leading, spacing: 4) {
 			Text(_navigationTitle)
