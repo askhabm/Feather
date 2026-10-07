@@ -13,6 +13,7 @@ struct SourcesView: View {
 	@StateObject var viewModel = SourcesViewModel.shared
 	@State private var _selectedRoute: SourceAppsView.SourceAppRoute?
 	@State private var _searchText = ""
+	@FocusState private var _searchFocused: Bool
 	@AppStorage("Feather.sortOptionRawValue") private var _sortOptionRawValue: String = SourceAppsView.SortOption.default.rawValue
 	@AppStorage("Feather.sortAscending") private var _sortAscending: Bool = true
 	@State private var _sortOption: SourceAppsView.SortOption = .default
@@ -94,6 +95,18 @@ struct SourcesView: View {
 					.foregroundStyle(.secondary)
 				TextField("Поиск приложений", text: $_searchText)
 					.autocorrectionDisabled()
+					.focused($_searchFocused)
+					.submitLabel(.search)
+					.onSubmit { _searchFocused = false }
+				if !_searchText.isEmpty {
+					Button {
+						_searchText = ""
+					} label: {
+						Image(systemName: "xmark.circle.fill")
+							.foregroundStyle(.secondary)
+					}
+					.buttonStyle(.plain)
+				}
 			}
 			.padding(10)
 			.background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
@@ -136,6 +149,7 @@ struct SourcesView: View {
 					.padding(.top, 10)
 				}
 				.onChange(of: _selectedCategory) { key in
+					_searchFocused = false
 					withAnimation { proxy.scrollTo(key, anchor: .center) }
 				}
 			}
@@ -185,21 +199,23 @@ struct SourcesView: View {
 			return SourceAppsView.SourceRepositoryContext(sourceURL: source.sourceURL, repository: repo)
 		}
 		
-		TabView(selection: $_selectedCategory) {
-			ForEach(_categories, id: \.key) { c in
-				SourceAppsTableRepresentableView(
-					sourceContexts: contexts,
-					searchText: $_searchText,
-					sortOption: $_sortOption,
-					sortAscending: $_sortAscending,
-					selectedCategory: c.key,
-					onSelect: { _selectedRoute = $0 }
-				)
-				.ignoresSafeArea(edges: .bottom)
-				.tag(c.key)
-			}
-		}
-		.tabViewStyle(.page(indexDisplayMode: .never))
+		SourceAppsTableRepresentableView(
+			sourceContexts: contexts,
+			searchText: $_searchText,
+			sortOption: $_sortOption,
+			sortAscending: $_sortAscending,
+			selectedCategory: _selectedCategory,
+			categoryKeys: _categories.map { $0.key },
+			onSwipe: { step in
+				guard let i = _categories.firstIndex(where: { $0.key == _selectedCategory }) else { return }
+				let n = i + step
+				guard _categories.indices.contains(n) else { return }
+				withAnimation(.easeInOut(duration: 0.25)) {
+					_selectedCategory = _categories[n].key
+				}
+			},
+			onSelect: { _selectedRoute = $0 }
+		)
 		.ignoresSafeArea(edges: .bottom)
 	}
 
