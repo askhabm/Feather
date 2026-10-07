@@ -22,7 +22,7 @@ struct SourcesView: View {
 	private let _categories: [(key: String, title: String)] = [
 		("all", "Все"),
 		("social", "Соцсети"),
-		("finance", "Финансы"),
+		("finance", "Финансыы"),
 		("games", "Игры"),
 		("tools", "Инструменты")
 	]
