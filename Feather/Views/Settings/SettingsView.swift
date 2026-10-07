@@ -45,10 +45,10 @@ struct SettingsView: View {
 						Label("Добавить сертификат", systemImage: "checkmark.seal")
 					}
 				} footer: {
-					Text("Добавьте сертификат для подписи приложений.")
+					Text("Добавьте сертификат для установки приложений.")
 				}
 				
-				FRSection(.localized("Доп. настройки")) {
+				FRSection(.localized("Настройки установки")) {
 					NavigationLink(destination: InstallationView()) {
 						Label(.localized("Installation"), systemImage: "arrow.down.circle")
 					}
@@ -68,7 +68,7 @@ struct SettingsView: View {
 	}
 }
 
-// MARK: - Заголовок раздела: мелкий, серый, заглавными (как в zStore)
+// MARK: - Заголовок раздела: мелкий, серый, заглавными
 struct FRSection<Content: View, Footer: View>: View {
 	let title: String
 	let content: Content
