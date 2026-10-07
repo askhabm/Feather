@@ -21,7 +21,7 @@ struct SourcesView: View {
 	@State private var _selectedCategory = "all"
 	private let _categories: [(key: String, title: String)] = [
 		("all", "Все"),
-		("social", "Соц.Сети"),
+		("social", "Соцсети"),
 		("finance", "Финансы"),
 		("games", "Игры"),
 		("tools", "Инструменты")
