@@ -15,18 +15,10 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	@Binding var sortOption: SourceAppsView.SortOption
 	@Binding var sortAscending: Bool
 	var selectedCategory: String = "all"
-	var categoryKeys: [String] = []
-	var onSwipe: (Int) -> Void = { _ in }
 	var onSelect: (SourceAppsView.SourceAppRoute) -> Void
 	
 	func makeUIView(context: Context) -> UITableView {
 		let tableView = UITableView(frame: .zero, style: .plain)
-		tableView.keyboardDismissMode = .onDrag
-		
-		let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
-		pan.delegate = context.coordinator
-		tableView.addGestureRecognizer(pan)
-		
 		tableView.delegate = context.coordinator
 		tableView.dataSource = context.coordinator
 		tableView.register(UITableViewCell.self, forCellReuseIdentifier: "AppCell")
@@ -36,10 +28,6 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 			tableView.allowsSelection = true
 		} else {
 			tableView.allowsSelection = false
-		}
-		
-		if #available(iOS 15.0, *) {
-			tableView.sectionHeaderTopPadding = 0
 		}
 		
 		if
@@ -70,35 +58,27 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	}
 	
 	func updateUIView(_ tableView: UITableView, context: Context) {
-		let coordinator = context.coordinator
-		coordinator.uiTableView = tableView
-		coordinator.onSwipe = onSwipe
+		context.coordinator.uiTableView = tableView
 		
-		let sourcesChanged = coordinator.sourceContexts != sourceContexts
-		let searchChanged = coordinator.searchText != searchText
-		let sortOptionChanged = coordinator.sortOption != sortOption
-		let sortDirectionChanged = coordinator.sortAscending != sortAscending
-		let categoryChanged = coordinator.selectedCategory != selectedCategory
+		let sourcesChanged = context.coordinator.sourceContexts != sourceContexts
+		let searchChanged = context.coordinator.searchText != searchText
+		let sortOptionChanged = context.coordinator.sortOption != sortOption
+		let sortDirectionChanged = context.coordinator.sortAscending != sortAscending
+		let categoryChanged = context.coordinator.selectedCategory != selectedCategory
 		
-		if categoryChanged,
-		   let old = categoryKeys.firstIndex(of: coordinator.selectedCategory),
-		   let new = categoryKeys.firstIndex(of: selectedCategory) {
-			coordinator.pendingDirection = new > old ? 1 : -1
-		}
-		
-		coordinator.sourceContexts = sourceContexts
-		coordinator.searchText = searchText
-		coordinator.sortOption = sortOption
-		coordinator.sortAscending = sortAscending
-		coordinator.selectedCategory = selectedCategory
+		context.coordinator.sourceContexts = sourceContexts
+		context.coordinator.searchText = searchText
+		context.coordinator.sortOption = sortOption
+		context.coordinator.sortAscending = sortAscending
+		context.coordinator.selectedCategory = selectedCategory
 		
 		if sourcesChanged || searchChanged || sortOptionChanged || sortDirectionChanged || categoryChanged {
-			coordinator.invalidateCache()
+			context.coordinator.invalidateCache()
 		}
 	}
 	
 	func makeCoordinator() -> Coordinator {
-		let coordinator = Coordinator(
+		Coordinator(
 			sourceContexts: sourceContexts,
 			searchText: searchText,
 			sortOption: sortOption,
@@ -106,13 +86,11 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 			selectedCategory: selectedCategory,
 			onSelect: onSelect
 		)
-		coordinator.onSwipe = onSwipe
-		return coordinator
 	}
 }
 
 // MARK: - Representable Extension: Coordinator
-extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate, UIGestureRecognizerDelegate {
+extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate {
 	var sourceContexts: [SourceAppsView.SourceRepositoryContext]
 	var searchText: String
 	var sortOption: SourceAppsView.SortOption
@@ -126,32 +104,6 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	
 	private var _cachedSortedApps: [SourceAppEntry] = []
 	weak var uiTableView: UITableView?
-	
-	// Свайп между категориями
-	var pendingDirection = 0
-	var onSwipe: (Int) -> Void = { _ in }
-	
-	@objc func handlePan(_ gesture: UIPanGestureRecognizer) {
-		guard gesture.state == .ended, let view = gesture.view else { return }
-		let t = gesture.translation(in: view)
-		let v = gesture.velocity(in: view)
-		guard abs(t.x) > abs(t.y) else { return }
-		if t.x < -60 || v.x < -500 {
-			onSwipe(1)
-		} else if t.x > 60 || v.x > 500 {
-			onSwipe(-1)
-		}
-	}
-	
-	func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-		guard let pan = gestureRecognizer as? UIPanGestureRecognizer, let view = pan.view else { return true }
-		let v = pan.velocity(in: view)
-		return abs(v.x) > abs(v.y) * 1.5
-	}
-	
-	func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-		true
-	}
 	
 	private var _allAppsWithSource: [SourceAppEntry] {
 		sourceContexts.flatMap { context in
@@ -275,20 +227,7 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	
 	func invalidateCache() {
 		_cachedSortedApps = _calculateSortedApps()
-		guard let tableView = uiTableView else { return }
-		
-		if pendingDirection != 0 {
-			let transition = CATransition()
-			transition.type = .push
-			transition.subtype = pendingDirection > 0 ? .fromRight : .fromLeft
-			transition.duration = 0.25
-			transition.timingFunction = CAMediaTimingFunction(name: .easeInOut)
-			tableView.layer.add(transition, forKey: "categoryPush")
-			tableView.reloadData()
-			tableView.layoutIfNeeded()
-			tableView.setContentOffset(CGPoint(x: 0, y: -tableView.adjustedContentInset.top), animated: false)
-			pendingDirection = 0
-		} else {
+		if let tableView = uiTableView {
 			UIView.transition(with: tableView, duration: 0.3, options: [.transitionCrossDissolve], animations: {
 				tableView.reloadData()
 			})
@@ -393,6 +332,14 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 			identifier: nil,
 			previewProvider: nil
 		) { _ in
+			let versionsMenu = UIMenu(
+				title: .localized("Скопировать URLs скачивания"),
+				image: UIImage(systemName: "list.bullet"),
+				children: self._contextActions(for: entry.app, with: { _, url in
+					UIPasteboard.general.string = url?.absoluteString
+				}, image: UIImage(systemName: "doc.on.clipboard"))
+			)
+			
 			let downloadsMenu = UIMenu(
 				title: .localized("Предыдущие версии"),
 				image: UIImage(systemName: "square.and.arrow.down.on.square"),
