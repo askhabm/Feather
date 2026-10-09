@@ -50,7 +50,7 @@ struct SigningView: View {
 	Form {
 		// пустая строка сверху сдвигает секцию к центру
 		Color.clear
-			.frame(height: max(0, (geo.size.height - 300) / 2 - 85))
+			.frame(height: max(0, (geo.size.height - 300) / 2 - 100))
 			.listRowBackground(Color.clear)
 			.listRowSeparator(.hidden)
 			.listRowInsets(EdgeInsets())
