@@ -13,6 +13,7 @@ struct SourcesView: View {
 	@StateObject var viewModel = SourcesViewModel.shared
 	@State private var _selectedRoute: SourceAppsView.SourceAppRoute?
 	@State private var _searchText = ""
+	@FocusState private var _isSearchFocused: Bool
 	@AppStorage("Feather.sortOptionRawValue") private var _sortOptionRawValue: String = SourceAppsView.SortOption.default.rawValue
 	@AppStorage("Feather.sortAscending") private var _sortAscending: Bool = true
 	@State private var _sortOption: SourceAppsView.SortOption = .default
@@ -80,6 +81,36 @@ struct SourcesView: View {
 		return apps.filter { _categoryValue(of: $0) == key.lowercased() }.count
 	}
 	
+	// MARK: - Смена категории (чипы и свайп)
+	private func _selectCategory(_ key: String) {
+		guard key != _selectedCategory else { return }
+		withAnimation(.easeInOut(duration: 0.2)) {
+			_selectedCategory = key
+		}
+	}
+	
+	private func _changeCategory(by step: Int) {
+		guard let index = _categories.firstIndex(where: { $0.key == _selectedCategory }) else { return }
+		let newIndex = index + step
+		guard _categories.indices.contains(newIndex) else { return }
+		UIImpactFeedbackGenerator(style: .light).impactOccurred()
+		_selectCategory(_categories[newIndex].key)
+	}
+	
+	// Свайп влево/вправо меняет категорию, любой свайп убирает клавиатуру
+	private var _swipeGesture: some Gesture {
+		DragGesture(minimumDistance: 24)
+			.onChanged { _ in
+				if _isSearchFocused { _isSearchFocused = false }
+			}
+			.onEnded { value in
+				let dx = value.translation.width
+				let dy = value.translation.height
+				guard abs(dx) > 70, abs(dx) > abs(dy) * 1.5 else { return }
+				_changeCategory(by: dx < 0 ? 1 : -1)
+			}
+	}
+	
 	// MARK: - Header (закреплённая шапка как в zStore)
 	private var _header: some View {
 		VStack(alignment: .leading, spacing: 4) {
@@ -89,14 +120,43 @@ struct SourcesView: View {
 				.font(.subheadline)
 				.foregroundStyle(.secondary)
 			
+			// Поиск: крестик очистки внутри, кнопка скрытия клавиатуры справа
 			HStack(spacing: 8) {
-				Image(systemName: "magnifyingglass")
-					.foregroundStyle(.secondary)
-				TextField("Поиск приложений", text: $_searchText)
-					.autocorrectionDisabled()
+				HStack(spacing: 8) {
+					Image(systemName: "magnifyingglass")
+						.foregroundStyle(.secondary)
+					TextField("Поиск приложений", text: $_searchText)
+						.focused($_isSearchFocused)
+						.autocorrectionDisabled()
+						.submitLabel(.search)
+					if !_searchText.isEmpty {
+						Button {
+							_searchText = ""
+						} label: {
+							Image(systemName: "xmark.circle.fill")
+								.foregroundStyle(.secondary)
+						}
+						.buttonStyle(.plain)
+					}
+				}
+				.padding(10)
+				.background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+				
+				if _isSearchFocused {
+					Button {
+						_isSearchFocused = false
+					} label: {
+						Image(systemName: "xmark")
+							.font(.system(size: 15, weight: .semibold))
+							.foregroundStyle(.primary)
+							.frame(width: 40, height: 40)
+							.background(Color(.secondarySystemBackground), in: Circle())
+					}
+					.buttonStyle(.plain)
+					.transition(.move(edge: .trailing).combined(with: .opacity))
+				}
 			}
-			.padding(10)
-			.background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14))
+			.animation(.easeInOut(duration: 0.2), value: _isSearchFocused)
 			.padding(.top, 8)
 			
 			ScrollViewReader { proxy in
@@ -104,9 +164,7 @@ struct SourcesView: View {
 					HStack(spacing: 8) {
 						ForEach(_categories, id: \.key) { c in
 							Button {
-								withAnimation(.easeInOut(duration: 0.25)) {
-									_selectedCategory = c.key
-								}
+								_selectCategory(c.key)
 							} label: {
 								Text(c.title)
 									.font(.subheadline.weight(.semibold))
@@ -142,7 +200,7 @@ struct SourcesView: View {
 		}
 		.padding(.horizontal, 16)
 		.padding(.top, 8)
-		.padding(.bottom, 8)
+		.padding(.bottom, 0)
 	}
 
 	// MARK: - Subviews
@@ -178,6 +236,7 @@ struct SourcesView: View {
 		}
 	}
 
+	// Одна таблица вместо пяти страниц: категория меняется мягким растворением
 	@ViewBuilder
 	private func appsListView() -> some View {
 		let contexts = Array(_sources).compactMap { source -> SourceAppsView.SourceRepositoryContext? in
@@ -185,22 +244,18 @@ struct SourcesView: View {
 			return SourceAppsView.SourceRepositoryContext(sourceURL: source.sourceURL, repository: repo)
 		}
 		
-		TabView(selection: $_selectedCategory) {
-			ForEach(_categories, id: \.key) { c in
-				SourceAppsTableRepresentableView(
-					sourceContexts: contexts,
-					searchText: $_searchText,
-					sortOption: $_sortOption,
-					sortAscending: $_sortAscending,
-					selectedCategory: c.key,
-					onSelect: { _selectedRoute = $0 }
-				)
-				.ignoresSafeArea(edges: .bottom)
-				.tag(c.key)
-			}
-		}
-		.tabViewStyle(.page(indexDisplayMode: .never))
+		SourceAppsTableRepresentableView(
+			sourceContexts: contexts,
+			searchText: $_searchText,
+			sortOption: $_sortOption,
+			sortAscending: $_sortAscending,
+			selectedCategory: _selectedCategory,
+			onSelect: { _selectedRoute = $0 }
+		)
+		.id(_selectedCategory)
+		.transition(.opacity)
 		.ignoresSafeArea(edges: .bottom)
+		.simultaneousGesture(_swipeGesture)
 	}
 
 	// MARK: - Sort (кнопка сортировки убрана с экрана, функции оставлены)
