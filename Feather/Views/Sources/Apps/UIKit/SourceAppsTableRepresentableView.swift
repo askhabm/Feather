@@ -17,12 +17,24 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	var selectedCategory: String = "all"
 	var onSelect: (SourceAppsView.SourceAppRoute) -> Void
 	
+	// Блок новостей над списком (показывался, когда в каталоге ровно один репозиторий с новостями).
+	// false = выключен, чтобы не было пустого места между чипами и приложениями. Вернуть блок: поставь true.
+	private let showsNewsHeader = false
+	
 	func makeUIView(context: Context) -> UITableView {
 		let tableView = UITableView(frame: .zero, style: .plain)
 		tableView.delegate = context.coordinator
 		tableView.dataSource = context.coordinator
 		tableView.register(UITableViewCell.self, forCellReuseIdentifier: "AppCell")
 		tableView.register(UITableViewHeaderFooterView.self, forHeaderFooterViewReuseIdentifier: "SectionHeader")
+		
+		// Клавиатура уходит, как только начинаешь листать список
+		tableView.keyboardDismissMode = .onDrag
+		
+		// Без лишнего отступа сверху над первой строкой
+		if #available(iOS 15, *) {
+			tableView.sectionHeaderTopPadding = 0
+		}
 		
 		if #available(iOS 17, *) {
 			tableView.allowsSelection = true
@@ -31,6 +43,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 		}
 		
 		if
+			showsNewsHeader,
 			let firstSource = sourceContexts.first,
 			sourceContexts.count == 1,
 			let news = firstSource.repository.news,
@@ -48,11 +61,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 			}
 		}
 		
-		tableView.alpha = 0
-		
-		UIView.transition(with: tableView,  duration: 0.5, options: [.transitionCrossDissolve], animations: {
-			tableView.alpha = 1
-		}, completion: nil)
+		// Растворение при смене категории делает SwiftUI (SourcesView), здесь отдельное медленное появление не нужно
 		
 		return tableView
 	}
@@ -283,13 +292,13 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		}
 	}
 	
-	// ИЗМЕНЕНО: новая функция, высота заголовка 0 в обычном режиме
+	// Высота заголовка почти 0 в обычном режиме (строки «N приложений» нет)
 	func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-		sortOption == .default ? 0 : UITableView.automaticDimension
+		sortOption == .default ? .leastNormalMagnitude : UITableView.automaticDimension
 	}
 	
 	func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-		// ИЗМЕНЕНО: в обычном режиме строку «N Приложений» не показываем
+		// В обычном режиме строку «N Приложений» не показываем
 		if sortOption == .default { return nil }
 		
 		let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: "SectionHeader")
