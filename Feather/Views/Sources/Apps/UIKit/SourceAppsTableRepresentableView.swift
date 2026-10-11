@@ -336,7 +336,7 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		cell.contentConfiguration = UIHostingConfiguration {
 			SourceAppsCellView(sourceURL: entry.sourceURL, source: entry.source, app: entry.app)
 		}
-		.margins(.vertical, 6)
+		.margins(.vertical, 7)
 		return cell
 	}
 	
