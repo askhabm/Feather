@@ -131,11 +131,11 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	
 	private var _didTriggerSwipe = false
 	private var _isSwiping = false
-
-func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-	!_isSwiping
-}
-
+	
+	// Пока идёт свайп вбок, строки не подсвечиваются серым
+	func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+		!_isSwiping
+	}
 	
 	// Жест стартует, только если палец идёт больше вбок, чем вверх-вниз
 	func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -148,12 +148,12 @@ func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPa
 	@objc func handlePan(_ pan: UIPanGestureRecognizer) {
 		switch pan.state {
 		case .began:
-	_didTriggerSwipe = false
-	_isSwiping = true
-	uiTableView?.visibleCells.forEach {
-		$0.setHighlighted(false, animated: false)
-		$0.setSelected(false, animated: false)
-	}
+			_didTriggerSwipe = false
+			_isSwiping = true
+			uiTableView?.visibleCells.forEach {
+				$0.setHighlighted(false, animated: false)
+				$0.setSelected(false, animated: false)
+			}
 		case .changed:
 			guard !_didTriggerSwipe else { return }
 			let x = pan.translation(in: pan.view).x
@@ -162,10 +162,10 @@ func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPa
 				_didTriggerSwipe = true
 				onCategorySwipe?(x < 0 ? 1 : -1)
 			}
-			case .ended, .cancelled, .failed:
-	_isSwiping = false
-    default:
-	   break
+		case .ended, .cancelled, .failed:
+			_isSwiping = false
+		default:
+			break
 		}
 	}
 	
@@ -392,75 +392,9 @@ func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPa
 		_sortedSectionTitles.firstIndex(of: title) ?? 0
 	}
 	
+	// Меню по долгому нажатию на приложение отключено
 	func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-		let entry: SourceAppEntry
-		switch sortOption {
-		case .default: entry = _sortedApps[indexPath.row]
-		case .name: entry = _groupedAppsByNameFirstLetter[_sortedSectionTitles[indexPath.section]]?[indexPath.row] ?? _sortedApps[indexPath.row]
-		case .date: entry = _groupedAppsByDate[_sortedSectionTitles[indexPath.section]]?[indexPath.row] ?? _sortedApps[indexPath.row]
-		}
-		
-		return UIContextMenuConfiguration(
-			identifier: nil,
-			previewProvider: nil
-		) { _ in
-			let versionsMenu = UIMenu(
-				title: .localized("Скопировать URLs скачивания"),
-				image: UIImage(systemName: "list.bullet"),
-				children: self._contextActions(for: entry.app, with: { _, url in
-					UIPasteboard.general.string = url?.absoluteString
-				}, image: UIImage(systemName: "doc.on.clipboard"))
-			)
-			
-			let downloadsMenu = UIMenu(
-				title: .localized("Предыдущие версии"),
-				image: UIImage(systemName: "square.and.arrow.down.on.square"),
-				children: self._contextActions(for: entry.app, with: { version, url in
-					if let url {
-						_ = DownloadManager.shared.startDownload(
-							from: url,
-							id: entry.app.currentUniqueId,
-							sourceProvenance: SourceAppProvenance(
-								sourceURL: entry.sourceURL,
-								repository: entry.source,
-								app: entry.app,
-								version: version
-							)
-						)
-					}
-				}, image: UIImage(systemName: "arrow.down"))
-			)
-			
-			return UIMenu(children: [downloadsMenu, versionsMenu])
-		}
-	}
-	
-	// MARK: Actions
-	
-	private func _contextActions(
-		for app: ASRepository.App,
-		with action: @escaping (ASRepository.App.Version?, URL?) -> Void,
-		image: UIImage?
-	) -> [UIAction] {
-		if let versions = app.versions, !versions.isEmpty {
-			return versions.map { version in
-				UIAction(
-					title: version.version,
-					image: image
-				) { _ in
-					action(version, version.downloadURL)
-				}
-			}
-		} else {
-			return [
-				UIAction(
-					title: app.currentVersion ?? "",
-					image: image
-				) { _ in
-					action(nil, app.currentDownloadUrl)
-				}
-			]
-		}
+		nil
 	}
 }}
 
