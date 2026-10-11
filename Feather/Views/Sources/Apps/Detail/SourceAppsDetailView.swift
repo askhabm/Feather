@@ -69,7 +69,7 @@ struct SourceAppsDetailView: View {
 				Divider()
                 
 				if let screenshotURLs = app.screenshotURLs {
-					NBSection(.localized("Screenshots")) {
+					NBSection(.localized("")) {
 						_screenshots(screenshotURLs: screenshotURLs)
 					}
                     
