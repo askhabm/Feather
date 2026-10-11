@@ -162,8 +162,10 @@ func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPa
 				_didTriggerSwipe = true
 				onCategorySwipe?(x < 0 ? 1 : -1)
 			}
-		default:
-			break
+			case .ended, .cancelled, .failed:
+	_isSwiping = false
+    default:
+	   break
 		}
 	}
 	
