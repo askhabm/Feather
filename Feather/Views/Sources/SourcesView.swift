@@ -84,9 +84,7 @@ struct SourcesView: View {
 	// MARK: - Смена категории (чипы и свайп)
 	private func _selectCategory(_ key: String) {
 		guard key != _selectedCategory else { return }
-		withAnimation(.easeInOut(duration: 0.2)) {
-			_selectedCategory = key
-		}
+		_selectedCategory = key
 	}
 	
 	private func _changeCategory(by step: Int) {
@@ -95,20 +93,6 @@ struct SourcesView: View {
 		guard _categories.indices.contains(newIndex) else { return }
 		UIImpactFeedbackGenerator(style: .light).impactOccurred()
 		_selectCategory(_categories[newIndex].key)
-	}
-	
-	// Свайп влево/вправо меняет категорию, любой свайп убирает клавиатуру
-	private var _swipeGesture: some Gesture {
-		DragGesture(minimumDistance: 24)
-			.onChanged { _ in
-				if _isSearchFocused { _isSearchFocused = false }
-			}
-			.onEnded { value in
-				let dx = value.translation.width
-				let dy = value.translation.height
-				guard abs(dx) > 70, abs(dx) > abs(dy) * 1.5 else { return }
-				_changeCategory(by: dx < 0 ? 1 : -1)
-			}
 	}
 	
 	// MARK: - Header (закреплённая шапка как в zStore)
@@ -200,7 +184,7 @@ struct SourcesView: View {
 		}
 		.padding(.horizontal, 16)
 		.padding(.top, 8)
-		.padding(.bottom, 0)
+		.padding(.bottom, 6)
 	}
 
 	// MARK: - Subviews
@@ -236,7 +220,7 @@ struct SourcesView: View {
 		}
 	}
 
-	// Одна таблица вместо пяти страниц: категория меняется мягким растворением
+	// Одна таблица вместо пяти страниц: категория меняется мгновенно, без затухания
 	@ViewBuilder
 	private func appsListView() -> some View {
 		let contexts = Array(_sources).compactMap { source -> SourceAppsView.SourceRepositoryContext? in
@@ -250,12 +234,13 @@ struct SourcesView: View {
 			sortOption: $_sortOption,
 			sortAscending: $_sortAscending,
 			selectedCategory: _selectedCategory,
-			onSelect: { _selectedRoute = $0 }
+			onSelect: { _selectedRoute = $0 },
+			onCategorySwipe: { step in
+				_isSearchFocused = false
+				_changeCategory(by: step)
+			}
 		)
-		.id(_selectedCategory)
-		.transition(.opacity)
 		.ignoresSafeArea(edges: .bottom)
-		.simultaneousGesture(_swipeGesture)
 	}
 
 	// MARK: - Sort (кнопка сортировки убрана с экрана, функции оставлены)
