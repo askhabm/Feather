@@ -130,6 +130,12 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	var onCategorySwipe: ((Int) -> Void)?
 	
 	private var _didTriggerSwipe = false
+	private var _isSwiping = false
+
+func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+	!_isSwiping
+}
+
 	
 	// Жест стартует, только если палец идёт больше вбок, чем вверх-вниз
 	func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -142,7 +148,12 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	@objc func handlePan(_ pan: UIPanGestureRecognizer) {
 		switch pan.state {
 		case .began:
-			_didTriggerSwipe = false
+	_didTriggerSwipe = false
+	_isSwiping = true
+	uiTableView?.visibleCells.forEach {
+		$0.setHighlighted(false, animated: false)
+		$0.setSelected(false, animated: false)
+	}
 		case .changed:
 			guard !_didTriggerSwipe else { return }
 			let x = pan.translation(in: pan.view).x
