@@ -21,7 +21,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	
 	// Блок новостей над списком (показывался, когда в каталоге ровно один репозиторий с новостями).
 	// false = выключен, чтобы не было пустого места между чипами и приложениями. Вернуть блок: поставь true.
-	private let showsNewsHeader = true
+	private let showsNewsHeader = false
 	
 	func makeUIView(context: Context) -> UITableView {
 		let tableView = UITableView(frame: .zero, style: .plain)
@@ -37,8 +37,9 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 		context.coordinator.onCategorySwipe = onCategorySwipe
 		let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
 		pan.delegate = context.coordinator
-		pan.cancelsTouchesInView = false
 		tableView.addGestureRecognizer(pan)
+		// Если палец пошёл вбок, вертикальная прокрутка списка не включается
+		tableView.panGestureRecognizer.require(toFail: pan)
 		
 		// Без лишнего отступа сверху над первой строкой
 		if #available(iOS 15, *) {
@@ -134,18 +135,10 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
 		guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
 		let v = pan.velocity(in: pan.view)
-		return abs(v.x) > abs(v.y) * 1.3
+		return abs(v.x) > abs(v.y) * 1.1
 	}
 	
-	// Работает вместе с обычной прокруткой списка
-	func gestureRecognizer(
-		_ gestureRecognizer: UIGestureRecognizer,
-		shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
-	) -> Bool {
-		true
-	}
-	
-	// Категория меняется, как только палец прошёл вбок ~45 пт (короткий свайп тоже считается)
+	// Категория меняется, как только палец прошёл вбок ~20 пт или двигается быстро
 	@objc func handlePan(_ pan: UIPanGestureRecognizer) {
 		switch pan.state {
 		case .began:
@@ -153,7 +146,8 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		case .changed:
 			guard !_didTriggerSwipe else { return }
 			let x = pan.translation(in: pan.view).x
-			if abs(x) > 45 {
+			let vx = pan.velocity(in: pan.view).x
+			if abs(x) > 20 || (abs(x) > 8 && abs(vx) > 400) {
 				_didTriggerSwipe = true
 				onCategorySwipe?(x < 0 ? 1 : -1)
 			}
