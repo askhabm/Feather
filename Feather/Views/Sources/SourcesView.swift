@@ -95,12 +95,12 @@ struct SourcesView: View {
 		_selectCategory(_categories[newIndex].key)
 	}
 	
-	// MARK: - Header (закреплённая шапка как в zStore)
+	// MARK: - Header (закреплённая шапка)
 	private var _header: some View {
 		VStack(alignment: .leading, spacing: 4) {
-			Text("Каталог")
+			Text("AppStore+")
 				.font(.largeTitle.bold())
-			Text("Приложения для твоего iPhone")
+			Text("Каталог приложений для твоего iPhone")
 				.font(.subheadline)
 				.foregroundStyle(.secondary)
 			
@@ -184,7 +184,7 @@ struct SourcesView: View {
 		}
 		.padding(.horizontal, 16)
 		.padding(.top, 8)
-		.padding(.bottom, 6)
+		.padding(.bottom, 10)
 	}
 
 	// MARK: - Subviews
