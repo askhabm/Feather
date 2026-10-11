@@ -16,10 +16,12 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	@Binding var sortAscending: Bool
 	var selectedCategory: String = "all"
 	var onSelect: (SourceAppsView.SourceAppRoute) -> Void
+	// Горизонтальный свайп: +1 = следующая категория, -1 = предыдущая
+	var onCategorySwipe: ((Int) -> Void)? = nil
 	
 	// Блок новостей над списком (показывался, когда в каталоге ровно один репозиторий с новостями).
 	// false = выключен, чтобы не было пустого места между чипами и приложениями. Вернуть блок: поставь true.
-	private let showsNewsHeader = false
+	private let showsNewsHeader = true
 	
 	func makeUIView(context: Context) -> UITableView {
 		let tableView = UITableView(frame: .zero, style: .plain)
@@ -30,6 +32,13 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 		
 		// Клавиатура уходит, как только начинаешь листать список
 		tableView.keyboardDismissMode = .onDrag
+		
+		// Горизонтальные свайпы меняют категорию, вертикальную прокрутку не трогают
+		context.coordinator.onCategorySwipe = onCategorySwipe
+		let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
+		pan.delegate = context.coordinator
+		pan.cancelsTouchesInView = false
+		tableView.addGestureRecognizer(pan)
 		
 		// Без лишнего отступа сверху над первой строкой
 		if #available(iOS 15, *) {
@@ -68,6 +77,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 	
 	func updateUIView(_ tableView: UITableView, context: Context) {
 		context.coordinator.uiTableView = tableView
+		context.coordinator.onCategorySwipe = onCategorySwipe
 		
 		let sourcesChanged = context.coordinator.sourceContexts != sourceContexts
 		let searchChanged = context.coordinator.searchText != searchText
@@ -81,7 +91,10 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 		context.coordinator.sortAscending = sortAscending
 		context.coordinator.selectedCategory = selectedCategory
 		
-		if sourcesChanged || searchChanged || sortOptionChanged || sortDirectionChanged || categoryChanged {
+		if categoryChanged {
+			// Смена категории: без затухания, список сразу с начала
+			context.coordinator.invalidateCache(animated: false, scrollToTop: true)
+		} else if sourcesChanged || searchChanged || sortOptionChanged || sortDirectionChanged {
 			context.coordinator.invalidateCache()
 		}
 	}
@@ -99,7 +112,7 @@ struct SourceAppsTableRepresentableView: UIViewRepresentable {
 }
 
 // MARK: - Representable Extension: Coordinator
-extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate {
+extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate, UIGestureRecognizerDelegate {
 	var sourceContexts: [SourceAppsView.SourceRepositoryContext]
 	var searchText: String
 	var sortOption: SourceAppsView.SortOption
@@ -113,6 +126,41 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 	
 	private var _cachedSortedApps: [SourceAppEntry] = []
 	weak var uiTableView: UITableView?
+	var onCategorySwipe: ((Int) -> Void)?
+	
+	private var _didTriggerSwipe = false
+	
+	// Жест стартует, только если палец идёт больше вбок, чем вверх-вниз
+	func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+		guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+		let v = pan.velocity(in: pan.view)
+		return abs(v.x) > abs(v.y) * 1.3
+	}
+	
+	// Работает вместе с обычной прокруткой списка
+	func gestureRecognizer(
+		_ gestureRecognizer: UIGestureRecognizer,
+		shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+	) -> Bool {
+		true
+	}
+	
+	// Категория меняется, как только палец прошёл вбок ~45 пт (короткий свайп тоже считается)
+	@objc func handlePan(_ pan: UIPanGestureRecognizer) {
+		switch pan.state {
+		case .began:
+			_didTriggerSwipe = false
+		case .changed:
+			guard !_didTriggerSwipe else { return }
+			let x = pan.translation(in: pan.view).x
+			if abs(x) > 45 {
+				_didTriggerSwipe = true
+				onCategorySwipe?(x < 0 ? 1 : -1)
+			}
+		default:
+			break
+		}
+	}
 	
 	private var _allAppsWithSource: [SourceAppEntry] {
 		sourceContexts.flatMap { context in
@@ -234,12 +282,20 @@ extension SourceAppsTableRepresentableView { class Coordinator: NSObject, UITabl
 		}
 	}
 	
-	func invalidateCache() {
+	func invalidateCache(animated: Bool = true, scrollToTop: Bool = false) {
 		_cachedSortedApps = _calculateSortedApps()
-		if let tableView = uiTableView {
+		guard let tableView = uiTableView else { return }
+		
+		if animated {
 			UIView.transition(with: tableView, duration: 0.3, options: [.transitionCrossDissolve], animations: {
 				tableView.reloadData()
 			})
+		} else {
+			tableView.reloadData()
+		}
+		
+		if scrollToTop {
+			tableView.setContentOffset(CGPoint(x: 0, y: -tableView.adjustedContentInset.top), animated: false)
 		}
 	}
 	
