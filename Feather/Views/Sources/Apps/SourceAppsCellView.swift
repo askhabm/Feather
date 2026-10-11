@@ -27,17 +27,7 @@ struct SourceAppsCellView: View {
 					subtitle: Self.appDescription(app: app),
 					iconUrl: app.iconURL
 				)
-				.overlay(alignment: .bottomLeading) {
-					if let iconURL = source.currentIconURL {
-						LazyImage(url: iconURL) { state in
-							if let image = state.image {
-								image
-									.appIconStyle(size: 20, isCircle: true, background: Color(uiColor: .secondarySystemBackground))
-									.offset(x: 41, y: 4)
-							}
-						}
-					}
-				}
+			
 				DownloadButtonView(sourceURL: sourceURL, source: source, app: app)
 			}
 			
