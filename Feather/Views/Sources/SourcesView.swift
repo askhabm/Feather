@@ -165,7 +165,7 @@ struct SourcesView: View {
 												.foregroundStyle(.white)
 												.padding(.horizontal, 6)
 												.padding(.vertical, 2)
-												.background(Color.red, in: Capsule())
+												.background(Color.blue, in: Capsule())
 												.offset(x: 6, y: -6)
 										}
 									}
