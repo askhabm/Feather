@@ -9,6 +9,8 @@ import SwiftUI
 import Nuke
 import IDeviceSwift
 import OSLog
+import CoreData
+
 
 @main
 struct FeatherApp: App {
@@ -151,6 +153,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String, completionHandler: @escaping () -> Void) {
    	DownloadManager.shared.backgroundCompletionHandler = completionHandler
    }
+	
+	func applicationDidBecomeActive(_ application: UIApplication) {
+	_addDefaultSource()
+}
+
    
    private func _createPipeline() {
    	DataLoader.sharedUrlCache.diskCapacity = 0
@@ -241,10 +248,20 @@ class AppDelegate: NSObject, UIApplicationDelegate {
    	}
    }
 
-   private func _addDefaultSource() {
-   	guard UserDefaults.standard.bool(forKey: "feather.didAddDefaultSource") == false else {
-   		return
-   	}
+   private var _lastSourceAttempt = Date.distantPast
+
+private func _addDefaultSource() {
+	// повторять не чаще раза в 20 секунд
+	guard Date().timeIntervalSince(_lastSourceAttempt) > 20 else { return }
+	
+	// если каталог уже добавлен, ничего не делаем
+	let request = NSFetchRequest<AltSource>(entityName: "AltSource")
+	let count = (try? Storage.shared.context.count(for: request)) ?? 0
+	guard count == 0 else { return }
+	
+	_lastSourceAttempt = Date()
+	FR.handleSource("https://iphonmods.ru/iphonmods.json") { }
+}
    	
    	if let url = URL(string: "https://iphonmods.ru/iphonmods.json") {
    		FR.handleSource(url.absoluteString) { }
