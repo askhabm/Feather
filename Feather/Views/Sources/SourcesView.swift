@@ -51,6 +51,17 @@ struct SourcesView: View {
 		.task(id: Array(_sources)) {
 			await viewModel.fetchSources(_sources)
 		}
+		// Пока ни один репозиторий не загрузился, пробуем снова каждые 8 секунд
+		.task(id: _sources.count) {
+			while !Task.isCancelled {
+				try? await Task.sleep(nanoseconds: 8_000_000_000)
+				if Task.isCancelled { break }
+				let hasData = Array(_sources).contains { viewModel.sources[$0] != nil }
+				if !_sources.isEmpty && !hasData {
+					await viewModel.fetchSources(_sources, refresh: true)
+				}
+			}
+		}
 		.onChange(of: _sortOption) { newValue in
 			_sortOptionRawValue = newValue.rawValue
 		}
@@ -213,9 +224,9 @@ struct SourcesView: View {
 	private var emptyState: some View {
 		if #available(iOS 17, *) {
 			ContentUnavailableView {
-				Label("Нет приложений", systemImage: "globe.desk.fill")
+				Label("Загружаем каталог", systemImage: "globe.desk.fill")
 			} description: {
-				Text("Репозиторий загружается...")
+				Text("Проверьте интернет. Попытки повторяются автоматически.")
 			}
 		}
 	}
