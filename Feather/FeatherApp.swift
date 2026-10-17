@@ -262,13 +262,6 @@ private func _addDefaultSource() {
 	_lastSourceAttempt = Date()
 	FR.handleSource("https://iphonmods.ru/iphonmods.json") { }
 }
-   	
-   	if let url = URL(string: "https://iphonmods.ru/iphonmods.json") {
-   		FR.handleSource(url.absoluteString) { }
-   	}
-   	
-   	UserDefaults.standard.set(true, forKey: "feather.didAddDefaultSource")
-   }
    
    private func _checkAndUpdateSSLCertificatesIfNeeded() {
    	let lastUpdateKey = "Feather.lastSSLUpdate"
