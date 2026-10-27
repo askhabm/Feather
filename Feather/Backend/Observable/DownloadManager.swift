@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CoreData
 import UIKit.UIImpactFeedbackGenerator
 import BackgroundTasks
 
@@ -176,6 +177,10 @@ private func _updateBackgroundAudioState() {
 extension DownloadManager: URLSessionDownloadDelegate {
 	
 	func handlePachageFile(url: URL, dl: Download) throws {
+		// Скачано из каталога: после импорта сразу подписываем и устанавливаем
+		let shouldAutoSign = dl.sourceProvenance != nil
+		let knownUUIDs: Set<String> = shouldAutoSign ? AutoSign.importedUUIDs() : []
+		
 		FR.handlePackageFile(url, download: dl) { err in
 			if err != nil {
 				let generator = UINotificationFeedbackGenerator()
@@ -193,6 +198,13 @@ extension DownloadManager: URLSessionDownloadDelegate {
 					
 					self._updateBackgroundAudioState()
 					#endif
+				}
+				
+				if err == nil, shouldAutoSign {
+					// небольшая пауза, чтобы приложение успело появиться в базе
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+						AutoSign.signNewApp(excluding: knownUUIDs)
+					}
 				}
 			}
 		}
@@ -258,6 +270,101 @@ extension DownloadManager: URLSessionDownloadDelegate {
 		DispatchQueue.main.async {
 			self.backgroundCompletionHandler?()
 			self.backgroundCompletionHandler = nil
+		}
+	}
+}
+
+// MARK: - Автоподпись после скачивания из каталога
+enum AutoSign {
+	// UUID приложений, которые уже есть в библиотеке
+	static func importedUUIDs() -> Set<String> {
+		func read() -> Set<String> {
+			Set(importedObjects().compactMap { $0.value(forKey: "uuid") as? String })
+		}
+		return Thread.isMainThread ? read() : DispatchQueue.main.sync { read() }
+	}
+	
+	private static func importedObjects() -> [NSManagedObject] {
+		let context = Storage.shared.context
+		// если такой сущности нет в базе, тихо выходим (без вылета)
+		guard context.persistentStoreCoordinator?.managedObjectModel.entitiesByName["Imported"] != nil else {
+			return []
+		}
+		let request = NSFetchRequest<NSManagedObject>(entityName: "Imported")
+		return (try? context.fetch(request)) ?? []
+	}
+	
+	// Ищет только что добавленное приложение, подписывает его и ставит
+	static func signNewApp(excluding known: Set<String>) {
+		guard
+			let app = importedObjects().first(where: {
+				!known.contains(($0.value(forKey: "uuid") as? String) ?? "")
+			}) as? AppInfoPresentable
+		else {
+			return
+		}
+		
+		// сертификат, выбранный в настройках (так же, как на экране подписи)
+		let request = NSFetchRequest<CertificatePair>(entityName: "CertificatePair")
+		request.sortDescriptors = [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)]
+		let certificates = (try? Storage.shared.context.fetch(request)) ?? []
+		let selectedIndex = UserDefaults.standard.integer(forKey: "feather.selectedCert")
+		let certificate = certificates.indices.contains(selectedIndex) ? certificates[selectedIndex] : certificates.first
+		
+		var options = OptionsManager.shared.options
+		
+		// без сертификата и без особого режима подписи оставляем приложение в библиотеке
+		guard certificate != nil || options.signingOption != .default else { return }
+		
+		// ppq protection и переименования, как на экране подписи
+		if
+			options.ppqProtection,
+			let identifier = app.identifier,
+			let cert = certificate,
+			cert.ppQCheck
+		{
+			options.appIdentifier = "\(identifier).\(options.ppqString)"
+		}
+		
+		if
+			let currentBundleId = app.identifier,
+			let newBundleId = options.identifiers[currentBundleId]
+		{
+			options.appIdentifier = newBundleId
+		}
+		
+		if
+			let currentName = app.name,
+			let newName = options.displayNames[currentName]
+		{
+			options.appName = newName
+		}
+		
+		let finalOptions = options
+		
+		FR.signPackageFile(
+			app,
+			using: finalOptions,
+			icon: nil,
+			certificate: certificate
+		) { error in
+			if let error {
+				UIAlertController.showAlertWithOk(
+					title: "Error",
+					message: error.localizedDescription
+				)
+				return
+			}
+			
+			if finalOptions.post_deleteAppAfterSigned, !app.isSigned {
+				Storage.shared.deleteApp(for: app)
+			}
+			
+			if finalOptions.post_installAppAfterSigned {
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+					NotificationCenter.default.post(name: Notification.Name("Feather.installApp"), object: nil)
+				}
+			}
 		}
 	}
 }
