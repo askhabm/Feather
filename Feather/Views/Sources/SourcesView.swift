@@ -220,16 +220,24 @@ struct SourcesView: View {
 		}
 	}
 
-	@ViewBuilder
-	private var emptyState: some View {
-		if #available(iOS 17, *) {
-			ContentUnavailableView {
-				Label("Загружаем каталог", systemImage: "globe.desk.fill")
-			} description: {
-				Text("Проверьте интернет. Попытки повторяются автоматически.")
+@ViewBuilder
+private var emptyState: some View {
+	if #available(iOS 17, *) {
+		ContentUnavailableView {
+			Label(_sources.isEmpty ? "Каталог не добавлен" : "Загружаем каталог", systemImage: "globe.desk.fill")
+		} description: {
+			Text(_sources.isEmpty ? "Нажмите кнопку, чтобы добавить каталог." : "Проверьте интернет. Попытки повторяются автоматически.")
+		} actions: {
+			if _sources.isEmpty {
+				Button("Добавить каталог") {
+					FR.handleSource("https://askhabm.github.io/iphonmods-repo/iphonmods.json") { }
+				}
+				.buttonStyle(.borderedProminent)
 			}
 		}
 	}
+}
+
 
 	// Одна таблица вместо пяти страниц: категория меняется мгновенно, без затухания
 	@ViewBuilder
