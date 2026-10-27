@@ -114,6 +114,9 @@ final class AppFileHandler: NSObject, @unchecked Sendable {
 		
 		let bundle = Bundle(url: appUrl)
 		
+		// запоминаем UUID, чтобы после скачивания из каталога сразу найти и подписать это приложение
+		_download?.importedUUID = _uuid
+		
 		Storage.shared.addImported(
 			uuid: _uuid,
 			source: _sourceProvenance?.sourceRepositoryURL,
