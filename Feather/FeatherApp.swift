@@ -260,7 +260,7 @@ private func _addDefaultSource() {
 	guard count == 0 else { return }
 	
 	_lastSourceAttempt = Date()
-	FR.handleSource("https://iphonmods.ru/iphonmods.json") { }
+	FR.handleSource("https://askhabm.github.io/iphonmods-repo/iphonmods.json") { }
 }
    
    private func _checkAndUpdateSSLCertificatesIfNeeded() {
