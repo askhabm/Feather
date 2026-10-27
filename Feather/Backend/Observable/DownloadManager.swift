@@ -31,6 +31,8 @@ class Download: Identifiable, @unchecked Sendable {
 	let fileName: String
 	let onlyArchiving: Bool
 	var sourceProvenance: SourceAppProvenance?
+	// UUID приложения, которое появилось в библиотеке после импорта (для автоподписи)
+	var importedUUID: String?
 	
 	init(
 		id: String,
@@ -179,7 +181,6 @@ extension DownloadManager: URLSessionDownloadDelegate {
 	func handlePachageFile(url: URL, dl: Download) throws {
 		// Скачано из каталога: после импорта сразу подписываем и устанавливаем
 		let shouldAutoSign = dl.sourceProvenance != nil
-		let knownUUIDs: Set<String> = shouldAutoSign ? AutoSign.importedUUIDs() : []
 		
 		FR.handlePackageFile(url, download: dl) { err in
 			if err != nil {
@@ -200,11 +201,8 @@ extension DownloadManager: URLSessionDownloadDelegate {
 					#endif
 				}
 				
-				if err == nil, shouldAutoSign {
-					// небольшая пауза, чтобы приложение успело появиться в базе
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-						AutoSign.signNewApp(excluding: knownUUIDs)
-					}
+				if err == nil, shouldAutoSign, let uuid = dl.importedUUID {
+					AutoSign.signImportedApp(uuid: uuid)
 				}
 			}
 		}
@@ -276,14 +274,6 @@ extension DownloadManager: URLSessionDownloadDelegate {
 
 // MARK: - Автоподпись после скачивания из каталога
 enum AutoSign {
-	// UUID приложений, которые уже есть в библиотеке
-	static func importedUUIDs() -> Set<String> {
-		func read() -> Set<String> {
-			Set(importedObjects().compactMap { $0.value(forKey: "uuid") as? String })
-		}
-		return Thread.isMainThread ? read() : DispatchQueue.main.sync { read() }
-	}
-	
 	private static func importedObjects() -> [NSManagedObject] {
 		let context = Storage.shared.context
 		// если такой сущности нет в базе, тихо выходим (без вылета)
@@ -294,16 +284,32 @@ enum AutoSign {
 		return (try? context.fetch(request)) ?? []
 	}
 	
-	// Ищет только что добавленное приложение, подписывает его и ставит
-	static func signNewApp(excluding known: Set<String>) {
-		guard
-			let app = importedObjects().first(where: {
-				!known.contains(($0.value(forKey: "uuid") as? String) ?? "")
-			}) as? AppInfoPresentable
-		else {
+	private static func showError(_ message: String) {
+		UIAlertController.showAlertWithOk(title: "Автоподпись", message: message)
+	}
+	
+	// Ждёт, пока приложение появится в базе (до ~10 секунд), и запускает подпись
+	static func signImportedApp(uuid: String, attempt: Int = 0) {
+		if let object = importedObjects().first(where: { ($0.value(forKey: "uuid") as? String) == uuid }) {
+			guard let app = object as? AppInfoPresentable else {
+				showError("Приложение найдено, но не удалось подготовить его к подписи.")
+				return
+			}
+			sign(app)
 			return
 		}
 		
+		if attempt < 20 {
+			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+				signImportedApp(uuid: uuid, attempt: attempt + 1)
+			}
+		} else {
+			showError("Не удалось найти скачанное приложение в библиотеке.")
+		}
+	}
+	
+	// Подписывает приложение выбранным сертификатом и ставит
+	private static func sign(_ app: AppInfoPresentable) {
 		// сертификат, выбранный в настройках (так же, как на экране подписи)
 		let request = NSFetchRequest<CertificatePair>(entityName: "CertificatePair")
 		request.sortDescriptors = [NSSortDescriptor(keyPath: \CertificatePair.date, ascending: false)]
@@ -314,7 +320,10 @@ enum AutoSign {
 		var options = OptionsManager.shared.options
 		
 		// без сертификата и без особого режима подписи оставляем приложение в библиотеке
-		guard certificate != nil || options.signingOption != .default else { return }
+		guard certificate != nil || options.signingOption != .default else {
+			showError("Нет сертификата. Добавьте сертификат в настройках, и приложение подпишется.")
+			return
+		}
 		
 		// ppq protection и переименования, как на экране подписи
 		if
